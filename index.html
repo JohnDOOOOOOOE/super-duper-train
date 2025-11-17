@@ -2,42 +2,282 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>Suivi de mes montres</title>
+  <title>Suivi de mes envois</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      max-width: 600px;
+      max-width: 700px;
       margin: 0 auto;
       padding: 1rem;
+      background: #fafafa;
     }
     h1 {
       text-align: center;
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       margin-bottom: 1rem;
     }
-    .watch-list a {
+    h2 {
+      font-size: 1.2rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .section {
+      margin-bottom: 1.5rem;
+    }
+    .list a {
       display: block;
       padding: 0.75rem 1rem;
       margin-bottom: 0.5rem;
       text-decoration: none;
       border-radius: 0.5rem;
       border: 1px solid #ddd;
+      background: #fff;
+    }
+    .list a:hover {
+      background: #f2f2f2;
+    }
+    .empty {
+      font-size: 0.9rem;
+      color: #666;
+      font-style: italic;
+      margin: 0.3rem 0 0.8rem;
+    }
+    .form-container {
+      margin-top: 2rem;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid #ddd;
+      background: #fff;
+    }
+    .form-row {
+      margin-bottom: 0.75rem;
+    }
+    label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+    input[type="text"], input[type="url"], select {
+      width: 100%;
+      padding: 0.4rem 0.5rem;
+      border-radius: 0.4rem;
+      border: 1px solid #ccc;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 0.5rem 0.9rem;
+      border-radius: 0.5rem;
+      border: none;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    button[type="submit"] {
+      background: #222;
+      color: #fff;
+    }
+    button[type="button"] {
+      background: #eee;
+      margin-left: 0.5rem;
+    }
+    .small {
+      font-size: 0.8rem;
+      color: #777;
+      margin-top: 0.25rem;
     }
   </style>
 </head>
 <body>
-  <h1>Suivi de mes réparations</h1>
-  <div class="watch-list">
-    <a href="https://app.atelierdhorlogerie.ch/track/618578d1-6816-4d44-9833-4be638ed4af3">
-      Benrus – 618578d1-6816-4d44-9833-4be638ed4af3
-    </a>
-    <a href="https://app.atelierdhorlogerie.ch/track/7f2a483b-efab-42e1-9bbd-705dda2fbb07">
-      Seiko 7813 – 7f2a483b-efab-42e1-9bbd-705dda2fbb07
-    </a>
-    <a href="https://app.atelierdhorlogerie.ch/track/285a88fb-9128-4b57-a14d-43528f2e303d">
-      Baume &amp; Mercier – 285a88fb-9128-4b57-a14d-43528f2e303d
-    </a>
+  <h1>Suivi de mes réparations & colis</h1>
+
+  <!-- Section montres -->
+  <div class="section">
+    <h2>Montres</h2>
+    <div id="watch-list" class="list"></div>
+    <p id="watch-empty" class="empty" style="display:none;">
+      Aucune montre ajoutée (en plus de celles par défaut).
+    </p>
   </div>
+
+  <!-- Section colis -->
+  <div class="section">
+    <h2>Colis</h2>
+    <div id="parcel-list" class="list"></div>
+    <p id="parcel-empty" class="empty" style="display:none;">
+      Aucun colis enregistré pour le moment.
+    </p>
+  </div>
+
+  <!-- Formulaire d'ajout -->
+  <div class="form-container">
+    <h2>Ajouter un lien de suivi</h2>
+    <form id="add-form">
+      <div class="form-row">
+        <label for="type">Catégorie</label>
+        <select id="type" name="type">
+          <option value="watch">Montre</option>
+          <option value="parcel">Colis</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="label">Nom / description</label>
+        <input id="label" name="label" type="text" placeholder="Benrus, Seiko, Colis UPS, etc." required>
+      </div>
+
+      <div class="form-row">
+        <label for="url">Lien de suivi</label>
+        <input id="url" name="url" type="url" placeholder="https://..." required>
+        <p class="small">
+          Pour les montres : lien <code>https://app.atelierdhorlogerie.ch/track/...</code><br>
+          Pour les colis : lien La Poste, UPS, DHL, etc.
+        </p>
+      </div>
+
+      <div class="form-row">
+        <button type="submit">Ajouter</button>
+        <button type="button" id="clear-storage">Tout réinitialiser (local)</button>
+        <p class="small">
+          Les ajouts sont stockés sur cet appareil uniquement (localStorage du navigateur).
+        </p>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Liens par défaut (montres déjà connues)
+    const defaultWatches = [
+      {
+        label: "Benrus – 618578d1-6816-4d44-9833-4be638ed4af3",
+        url: "https://app.atelierdhorlogerie.ch/track/618578d1-6816-4d44-9833-4be638ed4af3"
+      },
+      {
+        label: "Seiko 7813 – 7f2a483b-efab-42e1-9bbd-705dda2fbb07",
+        url: "https://app.atelierdhorlogerie.ch/track/7f2a483b-efab-42e1-9bbd-705dda2fbb07"
+      },
+      {
+        label: "Baume & Mercier – 285a88fb-9128-4b57-a14d-43528f2e303d",
+        url: "https://app.atelierdhorlogerie.ch/track/285a88fb-9128-4b57-a14d-43528f2e303d"
+      }
+    ];
+
+    // Pour les colis, rien par défaut
+    const defaultParcels = [];
+
+    const WATCH_KEY = "watchLinks";
+    const PARCEL_KEY = "parcelLinks";
+
+    function loadStored(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed;
+      } catch (e) {
+        console.error("Erreur de lecture localStorage", key, e);
+        return [];
+      }
+    }
+
+    function saveStored(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        console.error("Erreur d'écriture localStorage", key, e);
+      }
+    }
+
+    function renderList(containerId, emptyId, defaults, stored) {
+      const container = document.getElementById(containerId);
+      const empty = document.getElementById(emptyId);
+      container.innerHTML = "";
+
+      // On affiche d'abord les valeurs par défaut
+      defaults.forEach(item => {
+        const a = document.createElement("a");
+        a.href = item.url;
+        a.textContent = item.label;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        container.appendChild(a);
+      });
+
+      // Puis celles ajoutées par l'utilisateur
+      if (stored.length === 0) {
+        empty.style.display = "block";
+      } else {
+        empty.style.display = "none";
+        stored.forEach(item => {
+          const a = document.createElement("a");
+          a.href = item.url;
+          a.textContent = item.label;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          container.appendChild(a);
+        });
+      }
+    }
+
+    function renderAll() {
+      const storedWatches = loadStored(WATCH_KEY);
+      const storedParcels = loadStored(PARCEL_KEY);
+
+      renderList("watch-list", "watch-empty", defaultWatches, storedWatches);
+      renderList("parcel-list", "parcel-empty", defaultParcels, storedParcels);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Affichage initial
+      renderAll();
+
+      const form = document.getElementById("add-form");
+      const clearBtn = document.getElementById("clear-storage");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const type = document.getElementById("type").value;
+        const label = document.getElementById("label").value.trim();
+        let url = document.getElementById("url").value.trim();
+
+        if (!label || !url) return;
+
+        // Si l'utilisateur n'a pas mis le schéma, on essaie de le compléter
+        if (!/^https?:\/\//i.test(url)) {
+          url = "https://" + url;
+        }
+
+        const entry = { label, url };
+
+        if (type === "watch") {
+          const stored = loadStored(WATCH_KEY);
+          stored.push(entry);
+          saveStored(WATCH_KEY, stored);
+        } else {
+          const stored = loadStored(PARCEL_KEY);
+          stored.push(entry);
+          saveStored(PARCEL_KEY, stored);
+        }
+
+        // Ré-afficher les listes
+        renderAll();
+
+        // Reset des champs
+        form.reset();
+        document.getElementById("type").value = type; // garde la catégorie sélectionnée
+      });
+
+      clearBtn.addEventListener("click", () => {
+        if (confirm("Réinitialiser toutes les entrées enregistrées localement (montres + colis) sur cet appareil ?")) {
+          localStorage.removeItem(WATCH_KEY);
+          localStorage.removeItem(PARCEL_KEY);
+          renderAll();
+        }
+      });
+    });
+  </script>
 </body>
 </html>
