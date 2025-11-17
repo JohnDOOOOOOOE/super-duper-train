@@ -59,7 +59,7 @@
       font-size: 0.9rem;
       margin-bottom: 0.25rem;
     }
-    input[type="text"], input[type="url"], select {
+    input[type="text"], input[type="url"], select, textarea {
       width: 100%;
       padding: 0.4rem 0.5rem;
       border-radius: 0.4rem;
@@ -80,12 +80,21 @@
     }
     button[type="button"] {
       background: #eee;
-      margin-left: 0.5rem;
+      margin-right: 0.5rem;
     }
     .small {
       font-size: 0.8rem;
       color: #777;
       margin-top: 0.25rem;
+    }
+    .export-import {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+    }
+    #export-data {
+      margin-top: 0.5rem;
+      min-height: 80px;
     }
   </style>
 </head>
@@ -140,10 +149,25 @@
         <button type="submit">Ajouter</button>
         <button type="button" id="clear-storage">Tout réinitialiser (local)</button>
         <p class="small">
-          Les ajouts sont stockés sur cet appareil uniquement (localStorage du navigateur).
+          Les ajouts sont stockés sur cet appareil (navigateur) tant que vous ne videz pas les données du site.
         </p>
       </div>
     </form>
+
+    <div class="export-import">
+      <h2>Exporter / Importer les données</h2>
+      <div class="form-row">
+        <button type="button" id="export-btn">Exporter</button>
+        <button type="button" id="import-btn">Importer</button>
+      </div>
+      <div class="form-row">
+        <label for="export-data">Données (copier/coller)</label>
+        <textarea id="export-data" placeholder="Cliquez sur Exporter pour remplir ce champ, ou collez des données JSON ici pour Importer."></textarea>
+        <p class="small">
+          Vous pouvez copier ce texte et le sauvegarder dans une note / fichier. Pour restaurer sur un autre appareil, collez-le ici puis cliquez sur Importer.
+        </p>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -195,7 +219,7 @@
       const empty = document.getElementById(emptyId);
       container.innerHTML = "";
 
-      // On affiche d'abord les valeurs par défaut
+      // valeurs par défaut
       defaults.forEach(item => {
         const a = document.createElement("a");
         a.href = item.url;
@@ -205,7 +229,7 @@
         container.appendChild(a);
       });
 
-      // Puis celles ajoutées par l'utilisateur
+      // valeurs stockées
       if (stored.length === 0) {
         empty.style.display = "block";
       } else {
@@ -235,6 +259,9 @@
 
       const form = document.getElementById("add-form");
       const clearBtn = document.getElementById("clear-storage");
+      const exportBtn = document.getElementById("export-btn");
+      const importBtn = document.getElementById("import-btn");
+      const exportArea = document.getElementById("export-data");
 
       form.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -245,7 +272,6 @@
 
         if (!label || !url) return;
 
-        // Si l'utilisateur n'a pas mis le schéma, on essaie de le compléter
         if (!/^https?:\/\//i.test(url)) {
           url = "https://" + url;
         }
@@ -262,12 +288,9 @@
           saveStored(PARCEL_KEY, stored);
         }
 
-        // Ré-afficher les listes
         renderAll();
-
-        // Reset des champs
         form.reset();
-        document.getElementById("type").value = type; // garde la catégorie sélectionnée
+        document.getElementById("type").value = type;
       });
 
       clearBtn.addEventListener("click", () => {
@@ -275,6 +298,36 @@
           localStorage.removeItem(WATCH_KEY);
           localStorage.removeItem(PARCEL_KEY);
           renderAll();
+        }
+      });
+
+      // Export : met toutes les données dans le textarea
+      exportBtn.addEventListener("click", () => {
+        const data = {
+          watches: loadStored(WATCH_KEY),
+          parcels: loadStored(PARCEL_KEY)
+        };
+        exportArea.value = JSON.stringify(data, null, 2);
+      });
+
+      // Import : lit le JSON du textarea et remplace les données locales
+      importBtn.addEventListener("click", () => {
+        const text = exportArea.value.trim();
+        if (!text) {
+          alert("Collez des données JSON dans la zone avant d'importer.");
+          return;
+        }
+        try {
+          const data = JSON.parse(text);
+          const watches = Array.isArray(data.watches) ? data.watches : [];
+          const parcels = Array.isArray(data.parcels) ? data.parcels : [];
+          saveStored(WATCH_KEY, watches);
+          saveStored(PARCEL_KEY, parcels);
+          renderAll();
+          alert("Données importées avec succès.");
+        } catch (e) {
+          console.error("Erreur d'import JSON", e);
+          alert("Le texte n'est pas un JSON valide.");
         }
       });
     });
