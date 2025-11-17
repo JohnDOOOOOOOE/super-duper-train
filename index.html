@@ -2,281 +2,435 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>Suivi de mes envois</title>
+  <title>Suivi montres & colis</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#111827">
+
   <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f9fafb;
+      --bg-card: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --accent: #111827;
+      --tag-bg: #e5e7eb;
+      --tag-text: #374151;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #020617;
+        --bg-card: #020617;
+        --border: #1e293b;
+        --text: #e5e7eb;
+        --text-muted: #9ca3af;
+        --accent: #f9fafb;
+        --tag-bg: #111827;
+        --tag-text: #e5e7eb;
+      }
+    }
+
+    * { box-sizing: border-box; }
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      max-width: 700px;
+      max-width: 800px;
       margin: 0 auto;
       padding: 1rem;
-      background: #fafafa;
+      background: var(--bg);
+      color: var(--text);
     }
+
     h1 {
       text-align: center;
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
     }
     h2 {
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       margin-top: 1.5rem;
       margin-bottom: 0.5rem;
     }
-    .section {
-      margin-bottom: 1.5rem;
+    .subtitle {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
     }
-    .list a {
-      display: block;
-      padding: 0.75rem 1rem;
-      margin-bottom: 0.5rem;
+
+    .lists-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    @media (min-width: 700px) {
+      .lists-container {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .card {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
       text-decoration: none;
+      color: inherit;
+      align-items: center;
+    }
+    .card:hover { border-color: var(--accent); }
+
+    .thumb {
+      flex: 0 0 56px;
+      height: 56px;
       border-radius: 0.5rem;
-      border: 1px solid #ddd;
-      background: #fff;
+      overflow: hidden;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: #e5e7eb;
     }
-    .list a:hover {
-      background: #f2f2f2;
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
-    .empty {
-      font-size: 0.9rem;
-      color: #666;
-      font-style: italic;
-      margin: 0.3rem 0 0.8rem;
+
+    .card-content { flex: 1; min-width: 0; }
+    .card-label { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.15rem; word-break: break-word; }
+    .card-url { font-size: 0.75rem; color: var(--text-muted); word-break: break-all; }
+
+    .tags { margin-top: 0.3rem; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+    .tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      cursor: pointer;
+      border: 1px solid transparent;
     }
+    .tag.active { border-color: var(--accent); }
+
+    .empty { font-size: 0.9rem; color: var(--text-muted); font-style: italic; }
+
     .form-container {
       margin-top: 2rem;
       padding: 1rem;
       border-radius: 0.75rem;
-      border: 1px solid #ddd;
-      background: #fff;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
     }
-    .form-row {
-      margin-bottom: 0.75rem;
-    }
-    label {
-      display: block;
-      font-size: 0.9rem;
-      margin-bottom: 0.25rem;
-    }
+
+    .form-row { margin-bottom: 0.75rem; }
+    label { display: block; font-size: 0.9rem; margin-bottom: 0.25rem; }
+
     input[type="text"], input[type="url"], select, textarea {
       width: 100%;
       padding: 0.4rem 0.5rem;
       border-radius: 0.4rem;
-      border: 1px solid #ccc;
-      font-size: 0.9rem;
-      box-sizing: border-box;
+      border: 1px solid #4b5563;
+      background: transparent;
+      color: inherit;
     }
+    textarea { resize: vertical; }
+
     button {
       padding: 0.5rem 0.9rem;
       border-radius: 0.5rem;
       border: none;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       cursor: pointer;
     }
-    button[type="submit"] {
-      background: #222;
-      color: #fff;
-    }
-    button[type="button"] {
-      background: #eee;
-      margin-right: 0.5rem;
-    }
-    .small {
-      font-size: 0.8rem;
-      color: #777;
-      margin-top: 0.25rem;
-    }
+    button[type="submit"] { background: var(--accent); color: #f9fafb; }
+    button[type="button"] { background: #4b5563; color: #f9fafb; margin-right: 0.5rem; }
+
     .export-import {
       margin-top: 1.5rem;
       padding-top: 1rem;
-      border-top: 1px solid #ddd;
+      border-top: 1px solid var(--border);
     }
-    #export-data {
-      margin-top: 0.5rem;
-      min-height: 80px;
+
+    #export-data { margin-top: 0.5rem; min-height: 80px; }
+
+    .tag-filter-container { margin-bottom: 0.75rem; font-size: 0.85rem; }
+    .tag-filter-list { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.25rem; }
+    .tag-filter-pill {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      cursor: pointer;
+      border: 1px solid transparent;
     }
+    .tag-filter-pill.active { border-color: var(--accent); }
   </style>
 </head>
+
 <body>
-  <h1>Suivi de mes réparations & colis</h1>
+  <h1>Suivi montres & colis</h1>
+  <p class="subtitle">Application Web installable – liens Tempora & colis, avec tags et photos.</p>
 
-  <!-- Section montres -->
-  <div class="section">
-    <h2>Montres</h2>
-    <div id="watch-list" class="list"></div>
-    <p id="watch-empty" class="empty" style="display:none;">
-      Aucune montre ajoutée (en plus de celles par défaut).
-    </p>
+  <!-- Filtre par tag -->
+  <div class="tag-filter-container">
+    <span class="tag-filter-label">Filtrer :</span>
+    <div id="tag-filter-list" class="tag-filter-list"></div>
   </div>
 
-  <!-- Section colis -->
-  <div class="section">
-    <h2>Colis</h2>
-    <div id="parcel-list" class="list"></div>
-    <p id="parcel-empty" class="empty" style="display:none;">
-      Aucun colis enregistré pour le moment.
-    </p>
+  <!-- Deux colonnes (Montres / Colis) -->
+  <div class="lists-container">
+    <div class="section">
+      <h2>Montres</h2>
+      <div id="watch-list" class="list"></div>
+      <p id="watch-empty" class="empty" style="display:none;">Aucune montre enregistrée.</p>
+    </div>
+
+    <div class="section">
+      <h2>Colis</h2>
+      <div id="parcel-list" class="list"></div>
+      <p id="parcel-empty" class="empty" style="display:none;">Aucun colis enregistré.</p>
+    </div>
   </div>
 
-  <!-- Formulaire d'ajout -->
+  <!-- Formulaire -->
   <div class="form-container">
-    <h2>Ajouter un lien de suivi</h2>
+    <h2>Ajouter un lien</h2>
     <form id="add-form">
       <div class="form-row">
-        <label for="type">Catégorie</label>
-        <select id="type" name="type">
+        <label>Catégorie</label>
+        <select id="type">
           <option value="watch">Montre</option>
           <option value="parcel">Colis</option>
         </select>
       </div>
 
       <div class="form-row">
-        <label for="label">Nom / description</label>
-        <input id="label" name="label" type="text" placeholder="Benrus, Seiko, Colis UPS, etc." required>
+        <label>Nom / Descriptif</label>
+        <input id="label" type="text" required placeholder="Ex : Tank Must révision, Colis UPS…">
       </div>
 
       <div class="form-row">
-        <label for="url">Lien de suivi</label>
-        <input id="url" name="url" type="url" placeholder="https://..." required>
-        <p class="small">
-          Pour les montres : lien <code>https://app.atelierdhorlogerie.ch/track/...</code><br>
-          Pour les colis : lien La Poste, UPS, DHL, etc.
-        </p>
+        <label>Lien de suivi</label>
+        <input id="url" type="url" required placeholder="https://...">
+      </div>
+
+      <div class="form-row">
+        <label>Tags (séparés par virgules)</label>
+        <input id="tags" type="text" placeholder="vintage, UPS, revision…">
+      </div>
+
+      <div class="form-row">
+        <label>Image (URL optionnelle)</label>
+        <input id="imageUrl" type="url" placeholder="https://image.jpg">
       </div>
 
       <div class="form-row">
         <button type="submit">Ajouter</button>
-        <button type="button" id="clear-storage">Tout réinitialiser (local)</button>
-        <p class="small">
-          Les ajouts sont stockés sur cet appareil (navigateur) tant que vous ne videz pas les données du site.
-        </p>
+        <button type="button" id="clear-storage">Reset local</button>
       </div>
     </form>
 
     <div class="export-import">
-      <h2>Exporter / Importer les données</h2>
+      <h2>Exporter / Importer</h2>
       <div class="form-row">
         <button type="button" id="export-btn">Exporter</button>
         <button type="button" id="import-btn">Importer</button>
       </div>
-      <div class="form-row">
-        <label for="export-data">Données (copier/coller)</label>
-        <textarea id="export-data" placeholder="Cliquez sur Exporter pour remplir ce champ, ou collez des données JSON ici pour Importer."></textarea>
-        <p class="small">
-          Vous pouvez copier ce texte et le sauvegarder dans une note / fichier. Pour restaurer sur un autre appareil, collez-le ici puis cliquez sur Importer.
-        </p>
-      </div>
+      <textarea id="export-data"></textarea>
     </div>
   </div>
 
   <script>
-    // Liens par défaut (montres déjà connues)
-    const defaultWatches = [
-      {
-        label: "Benrus – 618578d1-6816-4d44-9833-4be638ed4af3",
-        url: "https://app.atelierdhorlogerie.ch/track/618578d1-6816-4d44-9833-4be638ed4af3"
-      },
-      {
-        label: "Seiko 7813 – 7f2a483b-efab-42e1-9bbd-705dda2fbb07",
-        url: "https://app.atelierdhorlogerie.ch/track/7f2a483b-efab-42e1-9bbd-705dda2fbb07"
-      },
-      {
-        label: "Baume & Mercier – 285a88fb-9128-4b57-a14d-43528f2e303d",
-        url: "https://app.atelierdhorlogerie.ch/track/285a88fb-9128-4b57-a14d-43528f2e303d"
-      }
-    ];
-
-    // Pour les colis, rien par défaut
+    // Aucune montre / aucun colis par défaut pour ton anonymat
+    const defaultWatches = [];
     const defaultParcels = [];
 
-    const WATCH_KEY = "watchLinks";
-    const PARCEL_KEY = "parcelLinks";
+    const WATCH_KEY = "watchLinksV2";
+    const PARCEL_KEY = "parcelLinksV2";
+    let activeTagFilter = null;
 
     function loadStored(key) {
       try {
         const raw = localStorage.getItem(key);
         if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return [];
-        return parsed;
-      } catch (e) {
-        console.error("Erreur de lecture localStorage", key, e);
+        return JSON.parse(raw);
+      } catch {
         return [];
       }
     }
 
-    function saveStored(key, value) {
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-      } catch (e) {
-        console.error("Erreur d'écriture localStorage", key, e);
-      }
+    function saveStored(key, val) {
+      localStorage.setItem(key, JSON.stringify(val));
     }
 
-    function renderList(containerId, emptyId, defaults, stored) {
+    function normalizeTags(tags) {
+      if (!tags) return [];
+      return String(tags)
+        .split(",")
+        .map(t => t.trim())
+        .filter(Boolean);
+    }
+
+    function createCard(item, isWatch) {
+      const a = document.createElement("a");
+      a.href = item.url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.className = "card";
+
+      const thumb = document.createElement("div");
+      thumb.className = "thumb";
+
+      if (item.imageUrl) {
+        const img = document.createElement("img");
+        img.src = item.imageUrl;
+        img.alt = item.label || "";
+        thumb.appendChild(img);
+      } else {
+        thumb.textContent = isWatch ? "Montre" : "Colis";
+      }
+
+      const content = document.createElement("div");
+      content.className = "card-content";
+
+      const labelEl = document.createElement("div");
+      labelEl.className = "card-label";
+      labelEl.textContent = item.label;
+
+      const urlEl = document.createElement("div");
+      urlEl.className = "card-url";
+      urlEl.textContent = item.url;
+
+      content.appendChild(labelEl);
+      content.appendChild(urlEl);
+
+      const tags = normalizeTags(item.tags);
+      if (tags.length > 0) {
+        const tagsEl = document.createElement("div");
+        tagsEl.className = "tags";
+        tags.forEach(tag => {
+          const t = document.createElement("span");
+          t.className = "tag";
+          if (activeTagFilter === tag) t.classList.add("active");
+          t.textContent = tag;
+          t.addEventListener("click", e => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleTagFilter(tag);
+          });
+          tagsEl.appendChild(t);
+        });
+        content.appendChild(tagsEl);
+      }
+
+      a.appendChild(thumb);
+      a.appendChild(content);
+      return a;
+    }
+
+    function renderList(containerId, emptyId, defaults, stored, isWatch) {
       const container = document.getElementById(containerId);
       const empty = document.getElementById(emptyId);
       container.innerHTML = "";
 
-      // valeurs par défaut
-      defaults.forEach(item => {
-        const a = document.createElement("a");
-        a.href = item.url;
-        a.textContent = item.label;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        container.appendChild(a);
-      });
+      const items = [...defaults, ...stored];
 
-      // valeurs stockées
-      if (stored.length === 0) {
+      const filtered = activeTagFilter
+        ? items.filter(i => normalizeTags(i.tags).includes(activeTagFilter))
+        : items;
+
+      if (filtered.length === 0) {
         empty.style.display = "block";
-      } else {
-        empty.style.display = "none";
-        stored.forEach(item => {
-          const a = document.createElement("a");
-          a.href = item.url;
-          a.textContent = item.label;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          container.appendChild(a);
-        });
+        return;
       }
+      empty.style.display = "none";
+
+      filtered.forEach(item => {
+        container.appendChild(createCard(item, isWatch));
+      });
+    }
+
+    function collectAllTags() {
+      const storedWatches = loadStored(WATCH_KEY);
+      const storedParcels = loadStored(PARCEL_KEY);
+      const all = [
+        ...defaultWatches,
+        ...defaultParcels,
+        ...storedWatches,
+        ...storedParcels
+      ];
+
+      const set = new Set();
+      all.forEach(it => normalizeTags(it.tags).forEach(t => set.add(t)));
+      return Array.from(set).sort();
+    }
+
+    function renderTagFilter() {
+      const c = document.getElementById("tag-filter-list");
+      c.innerHTML = "";
+
+      const tags = collectAllTags();
+      if (tags.length === 0) {
+        c.innerHTML = "<span class='small'>Aucun tag pour le moment.</span>";
+        return;
+      }
+
+      const allBtn = document.createElement("span");
+      allBtn.className = "tag-filter-pill" + (activeTagFilter === null ? " active" : "");
+      allBtn.textContent = "Tous";
+      allBtn.onclick = () => { activeTagFilter = null; renderAll(); };
+      c.appendChild(allBtn);
+
+      tags.forEach(tag => {
+        const pill = document.createElement("span");
+        pill.className = "tag-filter-pill" + (activeTagFilter === tag ? " active" : "");
+        pill.textContent = tag;
+        pill.onclick = () => {
+          activeTagFilter = activeTagFilter === tag ? null : tag;
+          renderAll();
+        };
+        c.appendChild(pill);
+      });
     }
 
     function renderAll() {
-      const storedWatches = loadStored(WATCH_KEY);
-      const storedParcels = loadStored(PARCEL_KEY);
-
-      renderList("watch-list", "watch-empty", defaultWatches, storedWatches);
-      renderList("parcel-list", "parcel-empty", defaultParcels, storedParcels);
+      renderList("watch-list", "watch-empty", defaultWatches, loadStored(WATCH_KEY), true);
+      renderList("parcel-list", "parcel-empty", defaultParcels, loadStored(PARCEL_KEY), false);
+      renderTagFilter();
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      // Affichage initial
       renderAll();
 
       const form = document.getElementById("add-form");
-      const clearBtn = document.getElementById("clear-storage");
-      const exportBtn = document.getElementById("export-btn");
-      const importBtn = document.getElementById("import-btn");
-      const exportArea = document.getElementById("export-data");
 
-      form.addEventListener("submit", (e) => {
+      form.addEventListener("submit", e => {
         e.preventDefault();
-
         const type = document.getElementById("type").value;
         const label = document.getElementById("label").value.trim();
         let url = document.getElementById("url").value.trim();
+        const tagsRaw = document.getElementById("tags").value.trim();
+        const imageUrl = document.getElementById("imageUrl").value.trim();
 
-        if (!label || !url) return;
+        if (!/^https?:\/\//.test(url)) url = "https://" + url;
 
-        if (!/^https?:\/\//i.test(url)) {
-          url = "https://" + url;
-        }
-
-        const entry = { label, url };
+        const entry = {
+          label,
+          url,
+          tags: normalizeTags(tagsRaw),
+          imageUrl: imageUrl || ""
+        };
 
         if (type === "watch") {
           const stored = loadStored(WATCH_KEY);
@@ -288,48 +442,43 @@
           saveStored(PARCEL_KEY, stored);
         }
 
-        renderAll();
         form.reset();
-        document.getElementById("type").value = type;
+        renderAll();
       });
 
-      clearBtn.addEventListener("click", () => {
-        if (confirm("Réinitialiser toutes les entrées enregistrées localement (montres + colis) sur cet appareil ?")) {
+      document.getElementById("clear-storage").onclick = () => {
+        if (confirm("Effacer toutes les données locales ?")) {
           localStorage.removeItem(WATCH_KEY);
           localStorage.removeItem(PARCEL_KEY);
+          activeTagFilter = null;
           renderAll();
         }
-      });
+      };
 
-      // Export : met toutes les données dans le textarea
-      exportBtn.addEventListener("click", () => {
-        const data = {
+      document.getElementById("export-btn").onclick = () => {
+        document.getElementById("export-data").value = JSON.stringify({
           watches: loadStored(WATCH_KEY),
           parcels: loadStored(PARCEL_KEY)
-        };
-        exportArea.value = JSON.stringify(data, null, 2);
-      });
+        }, null, 2);
+      };
 
-      // Import : lit le JSON du textarea et remplace les données locales
-      importBtn.addEventListener("click", () => {
-        const text = exportArea.value.trim();
-        if (!text) {
-          alert("Collez des données JSON dans la zone avant d'importer.");
-          return;
-        }
+      document.getElementById("import-btn").onclick = () => {
+        const txt = document.getElementById("export-data").value.trim();
         try {
-          const data = JSON.parse(text);
-          const watches = Array.isArray(data.watches) ? data.watches : [];
-          const parcels = Array.isArray(data.parcels) ? data.parcels : [];
-          saveStored(WATCH_KEY, watches);
-          saveStored(PARCEL_KEY, parcels);
+          const data = JSON.parse(txt);
+          saveStored(WATCH_KEY, Array.isArray(data.watches) ? data.watches : []);
+          saveStored(PARCEL_KEY, Array.isArray(data.parcels) ? data.parcels : []);
+          activeTagFilter = null;
           renderAll();
-          alert("Données importées avec succès.");
-        } catch (e) {
-          console.error("Erreur d'import JSON", e);
-          alert("Le texte n'est pas un JSON valide.");
+          alert("Import réussi !");
+        } catch {
+          alert("JSON invalide.");
         }
-      });
+      };
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js");
+      }
     });
   </script>
 </body>
