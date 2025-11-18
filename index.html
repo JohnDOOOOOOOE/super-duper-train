@@ -292,6 +292,7 @@
       font-size: 0.9rem;
     }
 
+    /* 🔴 Bouton rouge pour effacer toutes les données */
     .clear-btn {
       background: #b91c1c;
       color: #f9fafb;
@@ -325,18 +326,6 @@
       <h2>Colis</h2>
       <div id="parcel-list" class="list"></div>
       <p id="parcel-empty" class="empty" style="display:none;">Aucun colis enregistré.</p>
-    </div>
-  </div>
-
-  <!-- Section Archivés -->
-  <div class="archive-section">
-    <button type="button" id="archive-toggle" class="archive-toggle">
-      <span id="archive-arrow" class="arrow">▶</span>
-      <span>Archivés (</span><span id="archive-count">0</span><span>)</span>
-    </button>
-    <div id="archive-container" style="display:none; margin-top:0.5rem;">
-      <div id="archive-list" class="list"></div>
-      <p id="archive-empty" class="empty" style="display:none;">Aucun élément archivé.</p>
     </div>
   </div>
 
@@ -393,7 +382,19 @@
     </form>
   </div>
 
-  <!-- Section Export / Import / Sauvegarde -->
+  <!-- Section Archivés (volet) -->
+  <div class="archive-section">
+    <button type="button" id="archive-toggle" class="archive-toggle">
+      <span id="archive-arrow" class="arrow">▶</span>
+      <span>Archivés (</span><span id="archive-count">0</span><span>)</span>
+    </button>
+    <div id="archive-container" style="display:none; margin-top:0.5rem;">
+      <div id="archive-list" class="list"></div>
+      <p id="archive-empty" class="empty" style="display:none;">Aucun élément archivé.</p>
+    </div>
+  </div>
+
+  <!-- Section Export / Import / Sauvegarde (volet) -->
   <div class="export-section">
     <button type="button" id="export-toggle" class="export-toggle">
       <span id="export-arrow" class="arrow">▶</span>
