@@ -1,5 +1,5 @@
 {
-  "name": "Suivi montres & colis",
+  "name": "Suivi montres &amp; colis",
   "short_name": "Suivi",
   "start_url": "https://johndoooooooe.github.io/super-duper-train/",
   "display": "standalone",
@@ -16,5 +16,8 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "categories": [
+    "entertainment"
   ]
 }
