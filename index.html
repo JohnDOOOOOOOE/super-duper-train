@@ -233,12 +233,6 @@
       color: #f9fafb;
     }
 
-    .export-import {
-      margin-top: 1.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
-
     .small {
       font-size: 0.8rem;
       color: var(--text-muted);
@@ -276,10 +270,12 @@
     }
     #export-data { min-height: 80px; width: 100%; }
 
-    .archive-section {
+    .archive-section,
+    .export-section {
       margin-top: 2rem;
     }
-    .archive-toggle {
+    .archive-toggle,
+    .export-toggle {
       width: 100%;
       text-align: left;
       background: transparent;
@@ -291,8 +287,17 @@
       align-items: center;
       gap: 0.4rem;
     }
-    .archive-toggle span.arrow {
+    .archive-toggle span.arrow,
+    .export-toggle span.arrow {
       font-size: 0.9rem;
+    }
+
+    .clear-btn {
+      background: #b91c1c;
+      color: #f9fafb;
+    }
+    .clear-btn:hover {
+      background: #dc2626;
     }
   </style>
 </head>
@@ -386,25 +391,39 @@
         </p>
       </div>
     </form>
+  </div>
 
-    <div class="export-import">
-      <h2>Exporter / Importer</h2>
-      <div class="export-layout">
-        <div class="export-left">
-          <div class="form-row">
-            <button type="button" id="export-btn">Exporter</button>
-            <button type="button" id="import-btn">Importer</button>
+  <!-- Section Export / Import / Sauvegarde -->
+  <div class="export-section">
+    <button type="button" id="export-toggle" class="export-toggle">
+      <span id="export-arrow" class="arrow">▶</span>
+      <span>Export / Import / Sauvegarde</span>
+    </button>
+    <div id="export-container" style="display:none; margin-top:0.5rem;">
+      <div class="export-import">
+        <div class="export-layout">
+          <div class="export-left">
+            <div class="form-row">
+              <button type="button" id="export-btn">Exporter (télécharger .txt)</button>
+              <button type="button" id="import-btn">Importer depuis le texte</button>
+              <button type="button" id="import-file-btn">Importer un fichier</button>
+              <input type="file" id="import-file" accept=".txt,application/json" style="display:none;">
+            </div>
+            <div class="form-row">
+              <label for="export-data">Données JSON</label>
+              <textarea id="export-data" placeholder="Exporter puis copier, ou coller ici pour importer."></textarea>
+            </div>
           </div>
-          <div class="form-row">
-            <label for="export-data">Données JSON</label>
-            <textarea id="export-data" placeholder="Exporter puis copier, ou coller ici pour importer."></textarea>
+          <div class="export-right">
+            <button type="button" id="restore-backup">Restaurer le dernier backup</button>
+            <p class="small" id="backup-info">Aucune sauvegarde locale pour l'instant.</p>
+            <div style="margin-top:0.75rem;">
+              <button type="button" id="clear-storage" class="clear-btn">Effacer toutes les données locales</button>
+              <p class="small">
+                Ce bouton supprime toutes les montres & colis stockés localement sur cet appareil.
+              </p>
+            </div>
           </div>
-        </div>
-        <div class="export-right">
-          <button type="button" id="clear-storage">Effacer toutes les données locales</button>
-          <p class="small">
-            Ce bouton supprime toutes les montres & colis stockés localement sur cet appareil.
-          </p>
         </div>
       </div>
     </div>
@@ -413,11 +432,13 @@
   <script>
     const WATCH_KEY = "watchLinksV2";
     const PARCEL_KEY = "parcelLinksV2";
+    const BACKUP_KEY = "suiviBackupV1";
 
     let activeTagFilter = null;
     let editingId = null;
     let editingType = null;
     let archiveOpen = false;
+    let exportOpen = false;
 
     function enrichEntries(key, arr) {
       let changed = false;
@@ -455,6 +476,18 @@
 
     function saveStored(key, val) {
       localStorage.setItem(key, JSON.stringify(val));
+    }
+
+    function updateBackup() {
+      try {
+        const backup = {
+          createdAt: new Date().toISOString(),
+          watches: loadStored(WATCH_KEY),
+          parcels: loadStored(PARCEL_KEY)
+        };
+        localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+        renderBackupInfo();
+      } catch {}
     }
 
     function normalizeTags(tags) {
@@ -744,12 +777,45 @@
       arrowEl.textContent = archiveOpen ? "▼" : "▶";
     }
 
+    function renderBackupInfo() {
+      const infoEl = document.getElementById("backup-info");
+      try {
+        const raw = localStorage.getItem(BACKUP_KEY);
+        if (!raw) {
+          infoEl.textContent = "Aucune sauvegarde locale pour l'instant.";
+          return;
+        }
+        const data = JSON.parse(raw);
+        if (!data || !data.createdAt) {
+          infoEl.textContent = "Aucune sauvegarde locale pour l'instant.";
+          return;
+        }
+        const d = new Date(data.createdAt);
+        if (isNaN(d.getTime())) {
+          infoEl.textContent = "Dernière sauvegarde : date inconnue.";
+          return;
+        }
+        infoEl.textContent = "Dernière sauvegarde : " + d.toLocaleString("fr-CH");
+      } catch {
+        infoEl.textContent = "Dernière sauvegarde : erreur de lecture.";
+      }
+    }
+
+    function renderExportPanel() {
+      const container = document.getElementById("export-container");
+      const arrowEl = document.getElementById("export-arrow");
+      container.style.display = exportOpen ? "block" : "none";
+      arrowEl.textContent = exportOpen ? "▼" : "▶";
+    }
+
     function renderAll() {
       renderList("watch-list", "watch-empty", loadStored(WATCH_KEY), "watch", true);
       renderList("parcel-list", "parcel-empty", loadStored(PARCEL_KEY), "parcel", true);
       renderTagFilter();
       renderStats();
       renderArchive();
+      renderBackupInfo();
+      renderExportPanel();
     }
 
     function resetFormMode() {
@@ -797,6 +863,7 @@
       const arr = loadStored(key);
       saveStored(key, arr.filter(e => e.id !== id));
       if (editingId === id) resetFormMode();
+      updateBackup();
       renderAll();
     }
 
@@ -810,6 +877,7 @@
       if (editingId === id && newStatus === "archived") {
         resetFormMode();
       }
+      updateBackup();
       renderAll();
     }
 
@@ -819,16 +887,25 @@
       const form = document.getElementById("add-form");
       const exportBtn = document.getElementById("export-btn");
       const importBtn = document.getElementById("import-btn");
+      const importFileBtn = document.getElementById("import-file-btn");
+      const importFileInput = document.getElementById("import-file");
       const exportArea = document.getElementById("export-data");
       const clearBtn = document.getElementById("clear-storage");
       const imageFileInput = document.getElementById("imageFile");
       const imageUrlInput = document.getElementById("imageUrl");
       const archiveToggle = document.getElementById("archive-toggle");
+      const exportToggle = document.getElementById("export-toggle");
       const createdAtInput = document.getElementById("createdAt");
+      const restoreBackupBtn = document.getElementById("restore-backup");
 
       archiveToggle.addEventListener("click", () => {
         archiveOpen = !archiveOpen;
         renderArchive();
+      });
+
+      exportToggle.addEventListener("click", () => {
+        exportOpen = !exportOpen;
+        renderExportPanel();
       });
 
       form.addEventListener("submit", (e) => {
@@ -898,6 +975,7 @@
 
           resetFormMode();
           activeTagFilter = null;
+          updateBackup();
           renderAll();
         }
 
@@ -911,9 +989,10 @@
       });
 
       clearBtn.addEventListener("click", () => {
-        if (confirm("Effacer toutes les données locales (montres & colis) ?")) {
+        if (confirm("Effacer TOUTES les données locales (montres & colis) ?")) {
           localStorage.removeItem(WATCH_KEY);
           localStorage.removeItem(PARCEL_KEY);
+          localStorage.removeItem(BACKUP_KEY);
           activeTagFilter = null;
           resetFormMode();
           renderAll();
@@ -921,10 +1000,26 @@
       });
 
       exportBtn.addEventListener("click", () => {
-        exportArea.value = JSON.stringify({
+        const data = {
+          createdAt: new Date().toISOString(),
           watches: loadStored(WATCH_KEY),
           parcels: loadStored(PARCEL_KEY)
-        }, null, 2);
+        };
+        const json = JSON.stringify(data, null, 2);
+        exportArea.value = json;
+
+        try {
+          const blob = new Blob([json], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          const dateStr = new Date().toISOString().slice(0, 10);
+          a.download = `suivi_backup_${dateStr}.txt`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch {}
       });
 
       importBtn.addEventListener("click", () => {
@@ -936,10 +1031,68 @@
           saveStored(PARCEL_KEY, Array.isArray(data.parcels) ? data.parcels : []);
           resetFormMode();
           activeTagFilter = null;
+          updateBackup();
           renderAll();
           alert("Import réussi !");
         } catch {
           alert("JSON invalide.");
+        }
+      });
+
+      importFileBtn.addEventListener("click", () => {
+        importFileInput.click();
+      });
+
+      importFileInput.addEventListener("change", () => {
+        const file = importFileInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const txt = String(ev.target.result || "").trim();
+          if (!txt) {
+            alert("Fichier vide.");
+            return;
+          }
+          try {
+            const data = JSON.parse(txt);
+            saveStored(WATCH_KEY, Array.isArray(data.watches) ? data.watches : []);
+            saveStored(PARCEL_KEY, Array.isArray(data.parcels) ? data.parcels : []);
+            resetFormMode();
+            activeTagFilter = null;
+            updateBackup();
+            renderAll();
+            alert("Import depuis fichier réussi !");
+          } catch {
+            alert("Fichier JSON invalide.");
+          }
+        };
+        reader.readAsText(file);
+        importFileInput.value = "";
+      });
+
+      restoreBackupBtn.addEventListener("click", () => {
+        const raw = localStorage.getItem(BACKUP_KEY);
+        if (!raw) {
+          alert("Aucun backup trouvé.");
+          return;
+        }
+        try {
+          const data = JSON.parse(raw);
+          if (!data || !Array.isArray(data.watches) || !Array.isArray(data.parcels)) {
+            alert("Backup invalide.");
+            return;
+          }
+          if (!confirm("Restaurer le dernier backup ? Les données actuelles seront remplacées.")) {
+            return;
+          }
+          saveStored(WATCH_KEY, data.watches);
+          saveStored(PARCEL_KEY, data.parcels);
+          resetFormMode();
+          activeTagFilter = null;
+          renderAll();
+          alert("Backup restauré.");
+        } catch {
+          alert("Erreur lors de la lecture du backup.");
         }
       });
 
