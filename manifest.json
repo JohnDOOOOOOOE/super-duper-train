@@ -1,7 +1,8 @@
 {
-  "name": "Suivi montres &amp; colis",
+  "name": "Suivi montres & colis",
   "short_name": "Suivi",
   "start_url": "https://johndoooooooe.github.io/super-duper-train/",
+  "scope": "https://johndoooooooe.github.io/super-duper-train/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#111827",
@@ -17,7 +18,5 @@
       "type": "image/png"
     }
   ],
-  "categories": [
-    "entertainment"
-  ]
+  "categories": ["productivity"]
 }
