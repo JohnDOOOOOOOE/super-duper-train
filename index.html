@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="="fr">
+<html lang="fr">
 <head>
   <meta charset="utf-8">
   <title>Suivi montres & colis</title>
@@ -218,7 +218,6 @@
       font-size: 0.9rem;
       cursor: pointer;
     }
-    /* bouton de validation bien contrasté */
     #submit-btn {
       background-color: #111827;
       color: #f9fafb;
@@ -367,11 +366,9 @@
   </div>
 
   <script>
-    const defaultWatches = [];
-    const defaultParcels = [];
-
     const WATCH_KEY = "watchLinksV2";
     const PARCEL_KEY = "parcelLinksV2";
+
     let activeTagFilter = null;
     let editingId = null;
     let editingType = null;
@@ -547,12 +544,17 @@
       return card;
     }
 
-    function renderList(containerId, emptyId, defaults, stored, isWatch) {
+    function toggleTagFilter(tag) {
+      activeTagFilter = activeTagFilter === tag ? null : tag;
+      renderAll();
+    }
+
+    function renderList(containerId, emptyId, stored, isWatch) {
       const container = document.getElementById(containerId);
       const empty = document.getElementById(emptyId);
       container.innerHTML = "";
 
-      const items = [...defaults, ...stored];
+      const items = stored;
       const filtered = activeTagFilter
         ? items.filter(i => normalizeTags(i.tags).includes(activeTagFilter))
         : items;
@@ -571,12 +573,7 @@
     function collectAllTags() {
       const storedWatches = loadStored(WATCH_KEY);
       const storedParcels = loadStored(PARCEL_KEY);
-      const all = [
-        ...defaultWatches,
-        ...defaultParcels,
-        ...storedWatches,
-        ...storedParcels
-      ];
+      const all = [...storedWatches, ...storedParcels];
       const set = new Set();
       all.forEach(it => normalizeTags(it.tags).forEach(t => set.add(t)));
       return Array.from(set).sort();
@@ -612,15 +609,14 @@
 
     function renderStats() {
       const statsEl = document.getElementById("stats");
-      if (!statsEl) return;
-      const w = loadStored(WATCH_KEY);
-      const p = loadStored(PARCEL_KEY);
-      statsEl.textContent = "Montres : " + w.length + " | Colis : " + p.length;
+      const w = loadStored(WATCH_KEY).length;
+      const p = loadStored(PARCEL_KEY).length;
+      statsEl.textContent = `Montres : ${w} | Colis : ${p}`;
     }
 
     function renderAll() {
-      renderList("watch-list", "watch-empty", defaultWatches, loadStored(WATCH_KEY), true);
-      renderList("parcel-list", "parcel-empty", defaultParcels, loadStored(PARCEL_KEY), false);
+      renderList("watch-list", "watch-empty", loadStored(WATCH_KEY), true);
+      renderList("parcel-list", "parcel-empty", loadStored(PARCEL_KEY), false);
       renderTagFilter();
       renderStats();
     }
@@ -648,15 +644,16 @@
       document.getElementById("edit-hint").style.display = "block";
 
       document.getElementById("type").value = type;
-      document.getElementById("label").value = item.label || "";
-      document.getElementById("url").value = item.url || "";
+      document.getElementById("label").value = item.label;
+      document.getElementById("url").value = item.url;
       document.getElementById("tags").value = normalizeTags(item.tags).join(", ");
+
       const imgInput = document.getElementById("imageUrl");
-      const fileInput = document.getElementById("imageFile");
       imgInput.value = item.imageUrl && !String(item.imageUrl).startsWith("data:")
         ? item.imageUrl
         : "";
-      fileInput.value = "";
+
+      document.getElementById("imageFile").value = "";
 
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
     }
@@ -665,11 +662,8 @@
       if (!confirm("Supprimer cette entrée ?")) return;
       const key = type === "watch" ? WATCH_KEY : PARCEL_KEY;
       const arr = loadStored(key);
-      const filtered = arr.filter(e => e.id !== id);
-      saveStored(key, filtered);
-      if (editingId === id) {
-        resetFormMode();
-      }
+      saveStored(key, arr.filter(e => e.id !== id));
+      if (editingId === id) resetFormMode();
       renderAll();
     }
 
@@ -703,34 +697,27 @@
 
         let originalItem = null;
         if (editingId && editingType) {
-          const originalKey = editingType === "watch" ? WATCH_KEY : PARCEL_KEY;
-          const originalArr = loadStored(originalKey);
-          originalItem = originalArr.find(e => e.id === editingId) || null;
+          const origKey = editingType === "watch" ? WATCH_KEY : PARCEL_KEY;
+          const origArr = loadStored(origKey);
+          originalItem = origArr.find(e => e.id === editingId) || null;
         }
 
         function applyEntry(finalImageUrl) {
           const nowIso = new Date().toISOString();
-          const baseImage =
-            finalImageUrl ||
-            imageUrlField ||
-            (originalItem && originalItem.imageUrl) ||
-            "";
-
           const entry = {
             id: editingId || (type + "-" + Date.now() + "-" + Math.random().toString(16).slice(2)),
             label,
             url,
             tags,
-            imageUrl: baseImage,
-            createdAt: (originalItem && originalItem.createdAt) ? originalItem.createdAt : nowIso
+            imageUrl: finalImageUrl || imageUrlField || (originalItem && originalItem.imageUrl) || "",
+            createdAt: originalItem ? originalItem.createdAt : nowIso
           };
 
           if (editingId && editingType) {
             const oldKey = editingType === "watch" ? WATCH_KEY : PARCEL_KEY;
             const newKey = type === "watch" ? WATCH_KEY : PARCEL_KEY;
 
-            const oldArr = loadStored(oldKey).filter(e => e.id !== editingId);
-            saveStored(oldKey, oldArr);
+            saveStored(oldKey, loadStored(oldKey).filter(e => e.id !== editingId));
 
             const newArr = loadStored(newKey);
             newArr.push(entry);
@@ -749,9 +736,7 @@
 
         if (file) {
           const reader = new FileReader();
-          reader.onload = (ev) => {
-            applyEntry(ev.target.result);
-          };
+          reader.onload = (ev) => applyEntry(ev.target.result);
           reader.readAsDataURL(file);
         } else {
           applyEntry("");
@@ -759,7 +744,7 @@
       });
 
       clearBtn.addEventListener("click", () => {
-        if (confirm("Effacer toutes les données locales (montres & colis) sur cet appareil ?")) {
+        if (confirm("Effacer toutes les données locales (montres & colis) ?")) {
           localStorage.removeItem(WATCH_KEY);
           localStorage.removeItem(PARCEL_KEY);
           activeTagFilter = null;
@@ -777,18 +762,13 @@
 
       importBtn.addEventListener("click", () => {
         const txt = exportArea.value.trim();
-        if (!txt) {
-          alert("Colle des données JSON avant d'importer.");
-          return;
-        }
+        if (!txt) return alert("Colle des données JSON d'abord.");
         try {
           const data = JSON.parse(txt);
-          const watches = Array.isArray(data.watches) ? data.watches : [];
-          const parcels = Array.isArray(data.parcels) ? data.parcels : [];
-          saveStored(WATCH_KEY, watches);
-          saveStored(PARCEL_KEY, parcels);
-          activeTagFilter = null;
+          saveStored(WATCH_KEY, Array.isArray(data.watches) ? data.watches : []);
+          saveStored(PARCEL_KEY, Array.isArray(data.parcels) ? data.parcels : []);
           resetFormMode();
+          activeTagFilter = null;
           renderAll();
           alert("Import réussi !");
         } catch {
