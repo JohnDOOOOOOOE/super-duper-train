@@ -206,7 +206,7 @@
     .form-row { margin-bottom: 0.75rem; }
     label { display: block; font-size: 0.9rem; margin-bottom: 0.25rem; }
 
-    input[type="text"], input[type="url"], select, textarea, input[type="file"] {
+    input[type="text"], input[type="url"], input[type="date"], select, textarea, input[type="file"] {
       width: 100%;
       padding: 0.4rem 0.5rem;
       border-radius: 0.4rem;
@@ -299,7 +299,7 @@
 
 <body>
   <h1>Suivi montres & colis</h1>
-  <p class="subtitle">Application Web installable – liens Tempora & colis, avec tags, photos, édition, stats & archivage.</p>
+  <p class="subtitle">Application Web installable – liens Tempora & colis, avec tags, photos, édition, stats, archivage & tri par date.</p>
   <p id="stats" class="stats-line"></p>
 
   <!-- Filtre par tag -->
@@ -360,6 +360,14 @@
       <div class="form-row">
         <label>Tags (séparés par virgules)</label>
         <input id="tags" type="text" placeholder="vintage, UPS, révision…">
+      </div>
+
+      <div class="form-row">
+        <label>Date (optionnelle)</label>
+        <input id="createdAt" type="date">
+        <p class="small">
+          Si tu laisses vide, la date d'aujourd'hui sera utilisée.
+        </p>
       </div>
 
       <div class="form-row">
@@ -467,6 +475,19 @@
       }
     }
 
+    function isoToDateInput(iso) {
+      try {
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return "";
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      } catch {
+        return "";
+      }
+    }
+
     function detectCarrier(url) {
       const lower = (url || "").toLowerCase();
       if (lower.includes("ups")) return "UPS";
@@ -476,6 +497,16 @@
       if (lower.includes("chronopost")) return "Chronopost";
       if (lower.includes("colissimo")) return "Colissimo";
       return null;
+    }
+
+    function sortByDateDesc(items) {
+      return [...items].sort((a, b) => {
+        const da = new Date(a.createdAt);
+        const db = new Date(b.createdAt);
+        const ta = isNaN(da.getTime()) ? 0 : da.getTime();
+        const tb = isNaN(db.getTime()) ? 0 : db.getTime();
+        return tb - ta;
+      });
     }
 
     function createCard(item, type) {
@@ -614,17 +645,19 @@
         items = items.filter(i => i.status !== "archived");
       }
 
-      const filtered = activeTagFilter
-        ? items.filter(i => normalizeTags(i.tags).includes(activeTagFilter))
-        : items;
+      if (activeTagFilter) {
+        items = items.filter(i => normalizeTags(i.tags).includes(activeTagFilter));
+      }
 
-      if (filtered.length === 0) {
+      items = sortByDateDesc(items);
+
+      if (items.length === 0) {
         empty.style.display = "block";
         return;
       }
       empty.style.display = "none";
 
-      filtered.forEach(item => {
+      items.forEach(item => {
         container.appendChild(createCard(item, type));
       });
     }
@@ -693,6 +726,8 @@
         archived = archived.filter(i => normalizeTags(i.tags).includes(activeTagFilter));
       }
 
+      archived = sortByDateDesc(archived);
+
       countEl.textContent = archived.length;
       list.innerHTML = "";
 
@@ -724,6 +759,7 @@
       document.getElementById("submit-btn").textContent = "Ajouter";
       document.getElementById("edit-hint").style.display = "none";
       document.getElementById("add-form").reset();
+      document.getElementById("createdAt").value = "";
     }
 
     function handleEdit(type, id) {
@@ -743,6 +779,7 @@
       document.getElementById("label").value = item.label;
       document.getElementById("url").value = item.url;
       document.getElementById("tags").value = normalizeTags(item.tags).join(", ");
+      document.getElementById("createdAt").value = isoToDateInput(item.createdAt);
 
       const imgInput = document.getElementById("imageUrl");
       imgInput.value = item.imageUrl && !String(item.imageUrl).startsWith("data:")
@@ -787,6 +824,7 @@
       const imageFileInput = document.getElementById("imageFile");
       const imageUrlInput = document.getElementById("imageUrl");
       const archiveToggle = document.getElementById("archive-toggle");
+      const createdAtInput = document.getElementById("createdAt");
 
       archiveToggle.addEventListener("click", () => {
         archiveOpen = !archiveOpen;
@@ -802,6 +840,7 @@
         const tagsRaw = document.getElementById("tags").value.trim();
         const imageUrlField = imageUrlInput.value.trim();
         const file = imageFileInput.files[0];
+        const createdAtRaw = createdAtInput.value.trim();
 
         if (!label || !url) return;
         if (!/^https?:\/\//i.test(url)) {
@@ -817,6 +856,16 @@
           originalItem = origArr.find(e => e.id === editingId) || null;
         }
 
+        function computeCreatedAt(nowIso) {
+          if (createdAtRaw) {
+            const d = new Date(createdAtRaw + "T12:00:00");
+            if (!isNaN(d.getTime())) {
+              return d.toISOString();
+            }
+          }
+          return originalItem ? originalItem.createdAt : nowIso;
+        }
+
         function applyEntry(finalImageUrl) {
           const nowIso = new Date().toISOString();
           const status = originalItem && originalItem.status ? originalItem.status : "active";
@@ -827,7 +876,7 @@
             url,
             tags,
             imageUrl: finalImageUrl || imageUrlField || (originalItem && originalItem.imageUrl) || "",
-            createdAt: originalItem ? originalItem.createdAt : nowIso,
+            createdAt: computeCreatedAt(nowIso),
             status
           };
 
