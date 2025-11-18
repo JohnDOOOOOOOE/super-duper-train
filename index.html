@@ -8,7 +8,6 @@
 <meta name="theme-color" content="#111827">
 
 <style>
-/* ---------- THEME ---------- */
 :root {
   color-scheme: light dark;
   --bg: #f9fafb; --bg-card:#ffffff; --border:#e5e7eb;
@@ -20,14 +19,12 @@
     --text:#e5e7eb; --text-muted:#9ca3af; --accent:#f9fafb;
   }
 }
-
-/* ---------- STRUCTURE ---------- */
-body {
-  margin:0 auto; max-width:800px; padding:1rem;
-  font-family:system-ui; background:var(--bg); color:var(--text);
+body{
+  margin:0 auto;max-width:800px;padding:1rem;
+  font-family:system-ui;background:var(--bg);color:var(--text);
 }
-h1 {text-align:center;margin:0.5rem 0 0.2rem;}
-h2 {margin:1.5rem 0 0.6rem;font-size:1.15rem;}
+h1{text-align:center;margin:0.5rem 0 0.2rem;}
+h2{margin:1.5rem 0 0.6rem;font-size:1.15rem;}
 .subtitle{text-align:center;color:var(--text-muted);font-size:0.85rem;margin:0;}
 .stats{text-align:center;color:var(--text-muted);margin:1rem 0;font-size:0.8rem;}
 
@@ -43,7 +40,6 @@ button{cursor:pointer;border:none;border-radius:0.5rem;font-size:0.85rem;padding
 .clear-btn{background:#b91c1c;color:white;}
 .clear-btn:hover{background:#dc2626;}
 
-/* ---------- CARD ---------- */
 .card{
   background:var(--bg-card);border:1px solid var(--border);
   border-radius:0.75rem;padding:0.7rem;display:flex;flex-direction:column;gap:0.4rem;
@@ -58,14 +54,13 @@ button{cursor:pointer;border:none;border-radius:0.5rem;font-size:0.85rem;padding
 .card-label{font-weight:600;font-size:0.95rem;}
 .card-meta{color:var(--text-muted);font-size:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;}
 
-.tag{padding:0.1rem 0.5rem;border-radius:999px;font-size:0.7rem;background:#e5e7eb;color:#374151;}
+.tag{padding:0.1rem 0.5rem;border-radius:999px;font-size:0.7rem;background:#e5e7eb;color:#374151;margin-right:0.3rem;margin-top:0.2rem;}
 @media(prefers-color-scheme:dark){.tag{background:#111827;color:#e5e7eb;}}
 .tag.active{border:1px solid var(--accent);}
 
 .carrier{background:#0f172a;color:white;border:1px solid #475569;}
 .status{border:1px solid #4b5563;}
 
-/* ---------- PANELS ---------- */
 .panel-toggle{
   width:100%;background:transparent;border:1px solid var(--border);
   border-radius:0.75rem;padding:0.5rem 0.7rem;text-align:left;
@@ -73,7 +68,6 @@ button{cursor:pointer;border:none;border-radius:0.5rem;font-size:0.85rem;padding
 }
 .panel{display:none;margin-top:0.5rem;}
 
-/* ---------- FORM ---------- */
 .form-box{
   background:var(--bg-card);border:1px solid var(--border);
   border-radius:0.75rem;padding:1rem;margin-top:2rem;
@@ -85,6 +79,9 @@ input,select,textarea{
 }
 textarea{resize:vertical;}
 .small{font-size:0.8rem;color:var(--text-muted);}
+
+#tag-filters{margin-top:0.7rem;margin-bottom:0.7rem;}
+#tag-filters .tag{border:none;}
 </style>
 </head>
 
@@ -94,10 +91,8 @@ textarea{resize:vertical;}
 <p class="subtitle">Application installable – photos, tags, archivage, import/export</p>
 <p id="stats" class="stats"></p>
 
-<!-- TAG FILTERS -->
 <div id="tag-filters"></div>
 
-<!-- LISTS -->
 <div class="section-list">
   <div>
     <h2>Montres</h2>
@@ -111,7 +106,6 @@ textarea{resize:vertical;}
   </div>
 </div>
 
-<!-- FORMULAIRE -->
 <div class="form-box">
   <h2 id="form-title">Ajouter un lien</h2>
   <form id="form">
@@ -122,39 +116,32 @@ textarea{resize:vertical;}
         <option value="parcel">Colis</option>
       </select>
     </div>
-
     <div class="form-row">
       <label>Nom</label>
       <input id="label" required placeholder="Ex : Révision Seiko">
     </div>
-
     <div class="form-row">
       <label>Lien de suivi</label>
       <input id="url" required placeholder="https://...">
     </div>
-
     <div class="form-row">
-      <label>Tags (séparés par virgules)</label>
+      <label>Tags (séparés par des virgules)</label>
       <input id="tags">
     </div>
-
     <div class="form-row">
       <label>Date d’ajout</label>
       <input type="date" id="createdAt">
     </div>
-
     <div class="form-row">
       <label>Image (URL ou fichier)</label>
       <input id="imgUrl" placeholder="https://image.jpg">
       <input type="file" id="imgFile" accept="image/*">
     </div>
-
     <button id="submit" style="background:#111827;color:white;">Ajouter</button>
     <p id="edit-note" class="small" style="display:none;">Mode édition activé.</p>
   </form>
 </div>
 
-<!-- ARCHIVES -->
 <div style="margin-top:2rem;">
   <button class="panel-toggle" id="toggle-arch"><span id="arrow-arch">▶</span> Archivés (<span id="arch-count">0</span>)</button>
   <div class="panel" id="arch-panel">
@@ -163,51 +150,53 @@ textarea{resize:vertical;}
   </div>
 </div>
 
-<!-- EXPORT / IMPORT -->
 <div style="margin-top:2rem;">
   <button class="panel-toggle" id="toggle-exp"><span id="arrow-exp">▶</span> Export / Import / Backup</button>
   <div class="panel" id="exp-panel">
-
     <button id="export">Exporter (.txt)</button>
     <button id="import-text">Importer depuis texte</button>
     <button id="import-file-btn">Importer fichier</button>
     <input type="file" id="import-file" accept=".txt,.json" style="display:none">
-
     <textarea id="json-area" placeholder="Zone d’export/import…" style="margin-top:1rem;"></textarea>
-
     <button id="restore">Restaurer dernier backup</button>
     <p id="backup-info" class="small"></p>
-
     <button class="clear-btn" id="clear-all">Effacer toutes les données</button>
   </div>
 </div>
 
 <script>
-/* =========================
-    STOCKAGE + HELPERS
-========================= */
-
+/* --------- KEYS & LEGACY --------- */
 const K_W = "watchData";
 const K_P = "parcelData";
 const K_B = "backupData";
+
+const LEGACY_W = "watchLinksV2";
+const LEGACY_P = "parcelLinksV2";
 
 let editId = null;
 let editType = null;
 let filterTag = null;
 
-const get = k => JSON.parse(localStorage.getItem(k) || "[]");
+/* --------- BASIC STORAGE --------- */
+const getRaw = k => localStorage.getItem(k);
+const get = k => JSON.parse(getRaw(k) || "[]");
 const save = (k,v) => {
   try{ localStorage.setItem(k, JSON.stringify(v)); }
-  catch(e){ alert("Stockage plein. Supprimez des photos."); }
+  catch(e){ alert("Stockage plein (probablement à cause des photos)."); }
 };
 
 const normalizeTags = t => t ? t.split(",").map(x=>x.trim()).filter(Boolean) : [];
-const fmtDate = iso => new Date(iso).toLocaleDateString("fr-CH");
+
+function fmtDate(iso){
+  if(!iso) return "—";
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("fr-CH");
+}
 const sortByDate = arr => arr.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
 
-/* Detect transporteur */
-const detectCarrier = url => {
-  url = url.toLowerCase();
+const detectCarrier = url =>{
+  url = (url||"").toLowerCase();
   if(url.includes("ups")) return "UPS";
   if(url.includes("dhl")) return "DHL";
   if(url.includes("fedex")) return "FedEx";
@@ -216,30 +205,55 @@ const detectCarrier = url => {
   return null;
 };
 
-/* BACKUP SANS IMAGES */
+/* --------- MIGRATION LEGACY --------- */
+function ensureShape(arr,type){
+  return arr.map((item,idx)=>{
+    const copy = { ...item };
+    if(!copy.id) copy.id = type+"-"+Date.now()+"-"+idx;
+    if(!copy.createdAt) copy.createdAt = new Date().toISOString();
+    if(!copy.status) copy.status = "active";
+    if(copy.tags && Array.isArray(copy.tags)) copy.tags = copy.tags.join(", ");
+    return copy;
+  });
+}
+
+function migrateLegacy(){
+  if(!getRaw(K_W) && getRaw(LEGACY_W)){
+    try{
+      const legacy = JSON.parse(getRaw(LEGACY_W));
+      if(Array.isArray(legacy)){
+        save(K_W, ensureShape(legacy,"watch"));
+      }
+    }catch{}
+  }
+  if(!getRaw(K_P) && getRaw(LEGACY_P)){
+    try{
+      const legacy = JSON.parse(getRaw(LEGACY_P));
+      if(Array.isArray(legacy)){
+        save(K_P, ensureShape(legacy,"parcel"));
+      }
+    }catch{}
+  }
+}
+
+/* --------- BACKUP SANS IMAGES --------- */
 const stripImages = arr => arr.map(o=>{
   o={...o};
-  if(o.imageUrl && o.imageUrl.startsWith("data:")) delete o.imageUrl;
+  if(o.imageUrl && String(o.imageUrl).startsWith("data:")) delete o.imageUrl;
   return o;
 });
-
-function backup() {
+function backup(){
   const data = {
-    createdAt: new Date().toISOString(),
-    watches: stripImages(get(K_W)),
-    parcels: stripImages(get(K_P))
+    createdAt:new Date().toISOString(),
+    watches:stripImages(get(K_W)),
+    parcels:stripImages(get(K_P))
   };
-  try{
-    localStorage.setItem(K_B, JSON.stringify(data));
-  }catch{}
+  try{ localStorage.setItem(K_B, JSON.stringify(data)); }catch{}
   renderBackupInfo();
 }
 
-/* =========================
-      RENDER LOGIC
-========================= */
-
-function render() {
+/* --------- RENDER --------- */
+function render(){
   renderList("watch", get(K_W));
   renderList("parcel", get(K_P));
   renderTags();
@@ -258,46 +272,43 @@ function renderList(type, arr){
   items = sortByDate(items);
 
   empty.style.display = items.length ? "none" : "block";
-
   items.forEach(x=> list.appendChild(card(x,type)));
 }
 
 function card(item,type){
-  const c = document.createElement("div");
-  c.className="card";
+  const c=document.createElement("div"); c.className="card";
 
-  const main = document.createElement("div");
-  main.className="card-main";
-  main.onclick = ()=>window.open(item.url,"_blank");
+  const main=document.createElement("div"); main.className="card-main";
+  main.onclick=()=> item.url && window.open(item.url,"_blank");
 
-  const th = document.createElement("div"); th.className="thumb";
+  const th=document.createElement("div"); th.className="thumb";
   if(item.imageUrl){ const img=new Image(); img.src=item.imageUrl; th.appendChild(img); }
-  else th.textContent = type==="watch"?"Montre":"Colis";
+  else th.textContent= type==="watch"?"Montre":"Colis";
 
-  const content = document.createElement("div");
+  const content=document.createElement("div");
+  const carrier = type==="parcel" ? detectCarrier(item.url) : null;
   content.innerHTML = `
-    <div class="card-label">${item.label}</div>
+    <div class="card-label">${item.label || (type==="watch"?"Montre":"Colis")}</div>
     <div class="card-meta">
       <span>Ajouté le ${fmtDate(item.createdAt)}</span>
       <span class="status">${item.status==="archived"?"Archivé":"Actif"}</span>
-      ${type==="parcel" && detectCarrier(item.url) ? `<span class="tag carrier">${detectCarrier(item.url)}</span>`:""}
+      ${carrier?`<span class="tag carrier">${carrier}</span>`:""}
     </div>
   `;
 
-  const tagBox=document.createElement("div");
-  tagBox.style.marginTop="0.3rem";
+  const tagsBox=document.createElement("div");
   normalizeTags(item.tags).forEach(t=>{
-    const tg=document.createElement("span");
-    tg.className="tag"+(t===filterTag?" active":"");
-    tg.textContent=t;
-    tg.onclick=e=>{
+    const el=document.createElement("span");
+    el.className="tag"+(t===filterTag?" active":"");
+    el.textContent=t;
+    el.onclick=e=>{
       e.stopPropagation();
       filterTag = (filterTag===t?null:t);
       render();
     };
-    tagBox.appendChild(tg);
+    tagsBox.appendChild(el);
   });
-  if(tagBox.childNodes.length) content.appendChild(tagBox);
+  if(tagsBox.childNodes.length) content.appendChild(tagsBox);
 
   main.append(th,content);
   c.appendChild(main);
@@ -305,21 +316,22 @@ function card(item,type){
   const acts=document.createElement("div");
   acts.style.marginTop="0.3rem"; acts.style.display="flex"; acts.style.gap="0.4rem";
 
-  const edit=document.createElement("button");
-  edit.textContent="Modifier"; edit.className="action-btn";
-  edit.onclick=e=>{ e.stopPropagation(); loadEdit(item,type); };
+  const bEdit=document.createElement("button");
+  bEdit.textContent="Modifier"; bEdit.className="action-btn";
+  bEdit.onclick=e=>{e.stopPropagation(); loadEdit(item,type);};
 
-  const del=document.createElement("button");
-  del.textContent="Supprimer"; del.className="action-btn"; del.style.background="#b91c1c"; del.style.color="white";
-  del.onclick=e=>{ e.stopPropagation(); removeItem(item.id,type); };
+  const bDel=document.createElement("button");
+  bDel.textContent="Supprimer"; bDel.className="action-btn"; bDel.style.background="#b91c1c"; bDel.style.color="white";
+  bDel.onclick=e=>{e.stopPropagation(); removeItem(item.id,type);};
 
-  const arc=document.createElement("button");
-  arc.textContent=item.status==="archived"?"Restaurer":"Archiver";
-  arc.className="action-btn"; arc.style.background="#1d4ed8"; arc.style.color="white";
-  arc.onclick=e=>{ e.stopPropagation(); toggleArchive(item.id,type); };
+  const bArc=document.createElement("button");
+  bArc.textContent=item.status==="archived"?"Restaurer":"Archiver";
+  bArc.className="action-btn"; bArc.style.background="#1d4ed8"; bArc.style.color="white";
+  bArc.onclick=e=>{e.stopPropagation(); toggleArchive(item.id,type);};
 
-  acts.append(edit,del,arc);
+  acts.append(bEdit,bDel,bArc);
   c.appendChild(acts);
+
   return c;
 }
 
@@ -329,20 +341,19 @@ function renderTags(){
 
   const tags=new Set();
   [...get(K_W),...get(K_P)].forEach(x=>normalizeTags(x.tags).forEach(t=>tags.add(t)));
-
   if(!tags.size) return;
 
   const all=document.createElement("button");
   all.textContent="Tous";
   all.className="tag"+(filterTag? "":" active");
-  all.onclick=()=>{filterTag=null;render();}
+  all.onclick=()=>{filterTag=null;render();};
   box.appendChild(all);
 
   [...tags].sort().forEach(t=>{
     const b=document.createElement("button");
     b.textContent=t;
     b.className="tag"+(filterTag===t?" active":"");
-    b.onclick=()=>{filterTag=filterTag===t?null:t;render();}
+    b.onclick=()=>{filterTag=filterTag===t?null:t;render();};
     box.appendChild(b);
   });
 }
@@ -351,8 +362,7 @@ function renderStats(){
   const w=get(K_W), p=get(K_P);
   const wA=w.filter(x=>x.status!=="archived").length;
   const pA=p.filter(x=>x.status!=="archived").length;
-  document.getElementById("stats").textContent=
-    `Montres : ${wA} | Colis : ${pA}`;
+  document.getElementById("stats").textContent=`Montres : ${wA} | Colis : ${pA}`;
 }
 
 function renderArchive(){
@@ -370,24 +380,22 @@ function renderArchive(){
 
   count.textContent=arch.length;
   empty.style.display = arch.length?"none":"block";
-
   arch.forEach(x=>list.appendChild(card(x,x.__t)));
 }
 
 function renderBackupInfo(){
-  const raw=localStorage.getItem(K_B);
   const box=document.getElementById("backup-info");
-
+  const raw=getRaw(K_B);
   if(!raw){ box.textContent="Aucun backup."; return; }
   try{
     const d=new Date(JSON.parse(raw).createdAt);
     box.textContent="Sauvegarde : "+d.toLocaleString("fr-CH");
-  }catch{ box.textContent="Backup illisible."; }
+  }catch{
+    box.textContent="Backup illisible.";
+  }
 }
 
-/* =========================
-      CRUD LOGIC
-========================= */
+/* --------- CRUD --------- */
 
 function loadEdit(item,type){
   editId=item.id; editType=type;
@@ -395,19 +403,19 @@ function loadEdit(item,type){
   document.getElementById("edit-note").style.display="block";
 
   document.getElementById("type").value=type;
-  document.getElementById("label").value=item.label;
-  document.getElementById("url").value=item.url;
+  document.getElementById("label").value=item.label||"";
+  document.getElementById("url").value=item.url||"";
   document.getElementById("tags").value=normalizeTags(item.tags).join(", ");
-  document.getElementById("createdAt").value=item.createdAt.slice(0,10);
-  document.getElementById("imgUrl").value=item.imageUrl||"";
+  document.getElementById("createdAt").value=(item.createdAt||"").slice(0,10);
+  document.getElementById("imgUrl").value=item.imageUrl && !String(item.imageUrl).startsWith("data:") ? item.imageUrl : "";
   document.getElementById("imgFile").value="";
   window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
 }
 
 function removeItem(id,type){
-  if(!confirm("Supprimer ?"))return;
+  if(!confirm("Supprimer cette entrée ?")) return;
   const k=type==="watch"?K_W:K_P;
-  save(k,get(k).filter(x=>x.id!==id));
+  save(k, get(k).filter(x=>x.id!==id));
   resetForm();
   backup();
   render();
@@ -417,57 +425,52 @@ function toggleArchive(id,type){
   const k=type==="watch"?K_W:K_P;
   const arr=get(k);
   const it=arr.find(x=>x.id===id);
-  if(!it)return;
-  it.status = it.status==="archived"?"active":"archived";
+  if(!it) return;
+  it.status = it.status==="archived" ? "active" : "archived";
   save(k,arr);
   backup();
   render();
 }
 
-/* =========================
-        FORM SUBMIT
-========================= */
+/* --------- FORM --------- */
 
 document.getElementById("form").onsubmit = e =>{
   e.preventDefault();
-
   const type=document.getElementById("type").value;
   const label=document.getElementById("label").value.trim();
   let url=document.getElementById("url").value.trim();
   const tags=normalizeTags(document.getElementById("tags").value);
-  const file=document.getElementById("imgFile").files[0];
-  const imgUrlField=document.getElementById("imgUrl").value.trim();
   const dateField=document.getElementById("createdAt").value;
-  if(!url.startsWith("http")) url="https://"+url;
+  const imgUrlField=document.getElementById("imgUrl").value.trim();
+  const file=document.getElementById("imgFile").files[0];
+  if(!label || !url) return;
+  if(!/^https?:\/\//i.test(url)) url="https://"+url;
 
   const k = type==="watch"?K_W:K_P;
-  const arr=get(k);
+  const arr = get(k);
 
   const existing = editId ? get(editType==="watch"?K_W:K_P).find(x=>x.id===editId) : null;
+  const finalDate = dateField
+      ? new Date(dateField+"T12:00:00").toISOString()
+      : (existing ? existing.createdAt : new Date().toISOString());
 
-  const finalDate = dateField ?
-      new Date(dateField+"T12:00:00").toISOString() :
-      (existing ? existing.createdAt : new Date().toISOString());
-
-  function add(finalImg){
+  function apply(finalImg){
     const obj = {
-      id: editId || (type+"-"+Date.now()),
+      id: editId || (type+"-"+Date.now()+"-"+Math.random().toString(16).slice(2)),
       label, url, tags,
       createdAt: finalDate,
-      status: existing ? existing.status : "active",
-      imageUrl: finalImg || imgUrlField || (existing?existing.imageUrl:"")
+      status: existing ? (existing.status||"active") : "active",
+      imageUrl: finalImg || imgUrlField || (existing ? existing.imageUrl : "")
     };
 
     if(editId){
-      /* Suppression ancienne entrée */
       const oldK = editType==="watch"?K_W:K_P;
       save(oldK, get(oldK).filter(x=>x.id!==editId));
     }
 
-    /* Ajout */
-    const newArr=get(k);
-    newArr.push(obj);
-    save(k,newArr);
+    const current=get(k);
+    current.push(obj);
+    save(k,current);
 
     resetForm();
     filterTag=null;
@@ -477,9 +480,11 @@ document.getElementById("form").onsubmit = e =>{
 
   if(file){
     const r=new FileReader();
-    r.onload = e=> add(e.target.result);
+    r.onload = ev => apply(ev.target.result);
     r.readAsDataURL(file);
-  }else add(null);
+  } else {
+    apply(null);
+  }
 };
 
 function resetForm(){
@@ -489,19 +494,12 @@ function resetForm(){
   document.getElementById("edit-note").style.display="none";
 }
 
-/* =========================
-       EXPORT / IMPORT
-========================= */
+/* --------- EXPORT / IMPORT --------- */
 
 document.getElementById("export").onclick=()=>{
-  const data = {
-    createdAt:new Date().toISOString(),
-    watches:get(K_W),
-    parcels:get(K_P)
-  };
+  const data={createdAt:new Date().toISOString(),watches:get(K_W),parcels:get(K_P)};
   const txt=JSON.stringify(data,null,2);
   document.getElementById("json-area").value=txt;
-
   const blob=new Blob([txt],{type:"text/plain"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
@@ -524,44 +522,43 @@ document.getElementById("import-file-btn").onclick=()=>document.getElementById("
 document.getElementById("import-file").onchange=e=>{
   const f=e.target.files[0]; if(!f)return;
   const r=new FileReader();
-  r.onload=function(ev){
+  r.onload = ev=>{
     try{
       const d=JSON.parse(ev.target.result);
       save(K_W,d.watches||[]);
       save(K_P,d.parcels||[]);
       resetForm(); filterTag=null;
       backup(); render();
-      alert("Import OK.");
-    }catch{ alert("Fichier invalide."); }
+      alert("Import depuis fichier réussi.");
+    }catch{ alert("Fichier JSON invalide."); }
   };
   r.readAsText(f);
 };
 
 document.getElementById("restore").onclick=()=>{
-  const raw=localStorage.getItem(K_B);
-  if(!raw)return alert("Aucun backup.");
-  if(!confirm("Restaurer backup ?"))return;
+  const raw=getRaw(K_B);
+  if(!raw) return alert("Aucun backup.");
+  if(!confirm("Restaurer le dernier backup ?")) return;
   try{
     const d=JSON.parse(raw);
-    save(K_W, d.watches||[]);
-    save(K_P, d.parcels||[]);
+    save(K_W,d.watches||[]);
+    save(K_P,d.parcels||[]);
+    resetForm(); filterTag=null;
     render();
   }catch{ alert("Backup corrompu."); }
 };
 
 document.getElementById("clear-all").onclick=()=>{
-  if(confirm("Effacer toutes les données ?")){
-    localStorage.removeItem(K_W);
-    localStorage.removeItem(K_P);
-    localStorage.removeItem(K_B);
-    render();
-  }
+  if(!confirm("Effacer toutes les données locales ?")) return;
+  localStorage.removeItem(K_W);
+  localStorage.removeItem(K_P);
+  localStorage.removeItem(K_B);
+  filterTag=null;
+  resetForm();
+  render();
 };
 
-/* =========================
-      PANELS
-========================= */
-
+/* --------- PANELS --------- */
 document.getElementById("toggle-arch").onclick=()=>{
   const p=document.getElementById("arch-panel");
   const a=document.getElementById("arrow-arch");
@@ -578,14 +575,12 @@ document.getElementById("toggle-exp").onclick=()=>{
   a.textContent=open?"▶":"▼";
 };
 
-/* =========================
-     SERVICE WORKER
-========================= */
+/* --------- SW + INIT --------- */
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js");
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
 }
 
-/* Initial render */
+migrateLegacy();
 render();
 </script>
 </body>
