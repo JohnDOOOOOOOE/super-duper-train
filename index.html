@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="="fr">
 <head>
   <meta charset="utf-8">
   <title>Suivi montres & colis</title>
@@ -58,6 +58,12 @@
       text-align: center;
       font-size: 0.85rem;
       color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+    .stats-line {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
       margin-bottom: 1rem;
     }
 
@@ -76,16 +82,22 @@
 
     .card {
       display: flex;
-      gap: 0.75rem;
+      flex-direction: column;
+      gap: 0.4rem;
       padding: 0.75rem;
       border-radius: 0.75rem;
       border: 1px solid var(--border);
       background: var(--bg-card);
-      text-decoration: none;
-      color: inherit;
-      align-items: center;
     }
-    .card:hover { border-color: var(--accent); }
+    .card-main {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      cursor: pointer;
+    }
+    .card:hover {
+      border-color: var(--accent);
+    }
 
     .thumb {
       flex: 0 0 56px;
@@ -107,8 +119,26 @@
     }
 
     .card-content { flex: 1; min-width: 0; }
-    .card-label { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.15rem; word-break: break-word; }
-    .card-url { font-size: 0.75rem; color: var(--text-muted); word-break: break-all; }
+    .card-label {
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 0.15rem;
+      word-break: break-word;
+    }
+    .card-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.15rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .card-url {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      word-break: break-all;
+    }
 
     .tags { margin-top: 0.3rem; display: flex; flex-wrap: wrap; gap: 0.25rem; }
     .tag {
@@ -121,6 +151,37 @@
       border: 1px solid transparent;
     }
     .tag.active { border-color: var(--accent); }
+
+    .carrier-badge {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      background: #0f172a;
+      color: #e5e7eb;
+      border: 1px solid #475569;
+    }
+
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.3rem;
+    }
+    .card-actions button {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+    }
+    .card-actions .edit-btn {
+      background: #4b5563;
+      color: #f9fafb;
+    }
+    .card-actions .delete-btn {
+      background: #b91c1c;
+      color: #f9fafb;
+    }
 
     .empty {
       font-size: 0.9rem;
@@ -157,8 +218,15 @@
       font-size: 0.9rem;
       cursor: pointer;
     }
-    button[type="submit"] { background: var(--accent); color: #f9fafb; }
-    button[type="button"] { background: #4b5563; color: #f9fafb; }
+    /* bouton de validation bien contrasté */
+    #submit-btn {
+      background-color: #111827;
+      color: #f9fafb;
+    }
+    button[type="button"] {
+      background: #4b5563;
+      color: #f9fafb;
+    }
 
     .export-import {
       margin-top: 1.5rem;
@@ -207,11 +275,12 @@
 
 <body>
   <h1>Suivi montres & colis</h1>
-  <p class="subtitle">Application Web installable – liens Tempora & colis, avec tags et photos.</p>
+  <p class="subtitle">Application Web installable – liens Tempora & colis, avec tags, photos, édition & stats.</p>
+  <p id="stats" class="stats-line"></p>
 
   <!-- Filtre par tag -->
   <div class="tag-filter-container">
-    <span class="tag-filter-label">Filtrer :</span>
+    <span class="tag-filter-label">Filtrer par tag :</span>
     <div id="tag-filter-list" class="tag-filter-list"></div>
   </div>
 
@@ -232,7 +301,7 @@
 
   <!-- Formulaire -->
   <div class="form-container">
-    <h2>Ajouter un lien</h2>
+    <h2 id="form-title">Ajouter un lien</h2>
     <form id="add-form">
       <div class="form-row">
         <label>Catégorie</label>
@@ -267,9 +336,9 @@
       </div>
 
       <div class="form-row">
-        <button type="submit">Ajouter</button>
-        <p class="small">
-          Les données sont stockées localement dans ce navigateur. Utilise l'export JSON pour une sauvegarde ou pour transférer sur un autre appareil.
+        <button id="submit-btn" type="submit">Ajouter</button>
+        <p class="small" id="edit-hint" style="display:none;">
+          Mode édition activé – tu modifies une entrée existante.
         </p>
       </div>
     </form>
@@ -304,13 +373,34 @@
     const WATCH_KEY = "watchLinksV2";
     const PARCEL_KEY = "parcelLinksV2";
     let activeTagFilter = null;
+    let editingId = null;
+    let editingType = null;
+
+    function enrichEntries(key, arr) {
+      let changed = false;
+      arr.forEach((item) => {
+        if (!item.id) {
+          item.id = key + "-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+          changed = true;
+        }
+        if (!item.createdAt) {
+          item.createdAt = new Date().toISOString();
+          changed = true;
+        }
+      });
+      if (changed) {
+        localStorage.setItem(key, JSON.stringify(arr));
+      }
+      return arr;
+    }
 
     function loadStored(key) {
       try {
         const raw = localStorage.getItem(key);
         if (!raw) return [];
         const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
+        if (!Array.isArray(parsed)) return [];
+        return enrichEntries(key, parsed);
       } catch {
         return [];
       }
@@ -328,16 +418,41 @@
         .filter(Boolean);
     }
 
+    function formatDate(iso) {
+      try {
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return "";
+        return d.toLocaleDateString("fr-CH");
+      } catch {
+        return "";
+      }
+    }
+
+    function detectCarrier(url) {
+      const lower = (url || "").toLowerCase();
+      if (lower.includes("ups")) return "UPS";
+      if (lower.includes("laposte") || lower.includes("poste.ch") || lower.includes("post.ch")) return "La Poste";
+      if (lower.includes("dhl")) return "DHL";
+      if (lower.includes("fedex")) return "FedEx";
+      if (lower.includes("chronopost")) return "Chronopost";
+      if (lower.includes("colissimo")) return "Colissimo";
+      return null;
+    }
+
     function createCard(item, isWatch) {
-      const a = document.createElement("a");
-      a.href = item.url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.className = "card";
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const main = document.createElement("div");
+      main.className = "card-main";
+      main.addEventListener("click", () => {
+        if (item.url) {
+          window.open(item.url, "_blank", "noopener");
+        }
+      });
 
       const thumb = document.createElement("div");
       thumb.className = "thumb";
-
       if (item.imageUrl) {
         const img = document.createElement("img");
         img.src = item.imageUrl;
@@ -352,13 +467,33 @@
 
       const labelEl = document.createElement("div");
       labelEl.className = "card-label";
-      labelEl.textContent = item.label;
+      labelEl.textContent = item.label || (isWatch ? "Montre" : "Colis");
+
+      const metaEl = document.createElement("div");
+      metaEl.className = "card-meta";
+      const dateText = formatDate(item.createdAt);
+      if (dateText) {
+        const dateSpan = document.createElement("span");
+        dateSpan.textContent = "Ajouté le " + dateText;
+        metaEl.appendChild(dateSpan);
+      }
+
+      if (!isWatch) {
+        const carrier = detectCarrier(item.url);
+        if (carrier) {
+          const carrierSpan = document.createElement("span");
+          carrierSpan.className = "carrier-badge";
+          carrierSpan.textContent = carrier;
+          metaEl.appendChild(carrierSpan);
+        }
+      }
 
       const urlEl = document.createElement("div");
       urlEl.className = "card-url";
-      urlEl.textContent = item.url;
+      urlEl.textContent = item.url || "";
 
       content.appendChild(labelEl);
+      if (metaEl.childNodes.length > 0) content.appendChild(metaEl);
       content.appendChild(urlEl);
 
       const tags = normalizeTags(item.tags);
@@ -370,7 +505,7 @@
           t.className = "tag";
           if (activeTagFilter === tag) t.classList.add("active");
           t.textContent = tag;
-          t.addEventListener("click", e => {
+          t.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
             toggleTagFilter(tag);
@@ -380,9 +515,36 @@
         content.appendChild(tagsEl);
       }
 
-      a.appendChild(thumb);
-      a.appendChild(content);
-      return a;
+      main.appendChild(thumb);
+      main.appendChild(content);
+      card.appendChild(main);
+
+      const actions = document.createElement("div");
+      actions.className = "card-actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "edit-btn";
+      editBtn.textContent = "Modifier";
+      editBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        handleEdit(isWatch ? "watch" : "parcel", item.id);
+      });
+
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "delete-btn";
+      delBtn.textContent = "Supprimer";
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        handleDelete(isWatch ? "watch" : "parcel", item.id);
+      });
+
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+      card.appendChild(actions);
+
+      return card;
     }
 
     function renderList(containerId, emptyId, defaults, stored, isWatch) {
@@ -415,7 +577,6 @@
         ...storedWatches,
         ...storedParcels
       ];
-
       const set = new Set();
       all.forEach(it => normalizeTags(it.tags).forEach(t => set.add(t)));
       return Array.from(set).sort();
@@ -449,10 +610,67 @@
       });
     }
 
+    function renderStats() {
+      const statsEl = document.getElementById("stats");
+      if (!statsEl) return;
+      const w = loadStored(WATCH_KEY);
+      const p = loadStored(PARCEL_KEY);
+      statsEl.textContent = "Montres : " + w.length + " | Colis : " + p.length;
+    }
+
     function renderAll() {
       renderList("watch-list", "watch-empty", defaultWatches, loadStored(WATCH_KEY), true);
       renderList("parcel-list", "parcel-empty", defaultParcels, loadStored(PARCEL_KEY), false);
       renderTagFilter();
+      renderStats();
+    }
+
+    function resetFormMode() {
+      editingId = null;
+      editingType = null;
+      document.getElementById("form-title").textContent = "Ajouter un lien";
+      document.getElementById("submit-btn").textContent = "Ajouter";
+      document.getElementById("edit-hint").style.display = "none";
+      document.getElementById("add-form").reset();
+    }
+
+    function handleEdit(type, id) {
+      const key = type === "watch" ? WATCH_KEY : PARCEL_KEY;
+      const arr = loadStored(key);
+      const item = arr.find(e => e.id === id);
+      if (!item) return;
+
+      editingId = id;
+      editingType = type;
+
+      document.getElementById("form-title").textContent = "Modifier un lien";
+      document.getElementById("submit-btn").textContent = "Mettre à jour";
+      document.getElementById("edit-hint").style.display = "block";
+
+      document.getElementById("type").value = type;
+      document.getElementById("label").value = item.label || "";
+      document.getElementById("url").value = item.url || "";
+      document.getElementById("tags").value = normalizeTags(item.tags).join(", ");
+      const imgInput = document.getElementById("imageUrl");
+      const fileInput = document.getElementById("imageFile");
+      imgInput.value = item.imageUrl && !String(item.imageUrl).startsWith("data:")
+        ? item.imageUrl
+        : "";
+      fileInput.value = "";
+
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }
+
+    function handleDelete(type, id) {
+      if (!confirm("Supprimer cette entrée ?")) return;
+      const key = type === "watch" ? WATCH_KEY : PARCEL_KEY;
+      const arr = loadStored(key);
+      const filtered = arr.filter(e => e.id !== id);
+      saveStored(key, filtered);
+      if (editingId === id) {
+        resetFormMode();
+      }
+      renderAll();
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -483,25 +701,48 @@
 
         const tags = normalizeTags(tagsRaw);
 
-        function saveEntry(finalImageUrl) {
+        let originalItem = null;
+        if (editingId && editingType) {
+          const originalKey = editingType === "watch" ? WATCH_KEY : PARCEL_KEY;
+          const originalArr = loadStored(originalKey);
+          originalItem = originalArr.find(e => e.id === editingId) || null;
+        }
+
+        function applyEntry(finalImageUrl) {
+          const nowIso = new Date().toISOString();
+          const baseImage =
+            finalImageUrl ||
+            imageUrlField ||
+            (originalItem && originalItem.imageUrl) ||
+            "";
+
           const entry = {
+            id: editingId || (type + "-" + Date.now() + "-" + Math.random().toString(16).slice(2)),
             label,
             url,
             tags,
-            imageUrl: finalImageUrl || imageUrlField || ""
+            imageUrl: baseImage,
+            createdAt: (originalItem && originalItem.createdAt) ? originalItem.createdAt : nowIso
           };
 
-          if (type === "watch") {
-            const stored = loadStored(WATCH_KEY);
-            stored.push(entry);
-            saveStored(WATCH_KEY, stored);
+          if (editingId && editingType) {
+            const oldKey = editingType === "watch" ? WATCH_KEY : PARCEL_KEY;
+            const newKey = type === "watch" ? WATCH_KEY : PARCEL_KEY;
+
+            const oldArr = loadStored(oldKey).filter(e => e.id !== editingId);
+            saveStored(oldKey, oldArr);
+
+            const newArr = loadStored(newKey);
+            newArr.push(entry);
+            saveStored(newKey, newArr);
           } else {
-            const stored = loadStored(PARCEL_KEY);
-            stored.push(entry);
-            saveStored(PARCEL_KEY, stored);
+            const key = type === "watch" ? WATCH_KEY : PARCEL_KEY;
+            const arr = loadStored(key);
+            arr.push(entry);
+            saveStored(key, arr);
           }
 
-          form.reset();
+          resetFormMode();
           activeTagFilter = null;
           renderAll();
         }
@@ -509,11 +750,11 @@
         if (file) {
           const reader = new FileReader();
           reader.onload = (ev) => {
-            saveEntry(ev.target.result);
+            applyEntry(ev.target.result);
           };
           reader.readAsDataURL(file);
         } else {
-          saveEntry("");
+          applyEntry("");
         }
       });
 
@@ -522,6 +763,7 @@
           localStorage.removeItem(WATCH_KEY);
           localStorage.removeItem(PARCEL_KEY);
           activeTagFilter = null;
+          resetFormMode();
           renderAll();
         }
       });
@@ -541,9 +783,12 @@
         }
         try {
           const data = JSON.parse(txt);
-          saveStored(WATCH_KEY, Array.isArray(data.watches) ? data.watches : []);
-          saveStored(PARCEL_KEY, Array.isArray(data.parcels) ? data.parcels : []);
+          const watches = Array.isArray(data.watches) ? data.watches : [];
+          const parcels = Array.isArray(data.parcels) ? data.parcels : [];
+          saveStored(WATCH_KEY, watches);
+          saveStored(PARCEL_KEY, parcels);
           activeTagFilter = null;
+          resetFormMode();
           renderAll();
           alert("Import réussi !");
         } catch {
