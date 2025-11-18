@@ -122,7 +122,11 @@
     }
     .tag.active { border-color: var(--accent); }
 
-    .empty { font-size: 0.9rem; color: var(--text-muted); font-style: italic; }
+    .empty {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
 
     .form-container {
       margin-top: 2rem;
@@ -135,13 +139,14 @@
     .form-row { margin-bottom: 0.75rem; }
     label { display: block; font-size: 0.9rem; margin-bottom: 0.25rem; }
 
-    input[type="text"], input[type="url"], select, textarea {
+    input[type="text"], input[type="url"], select, textarea, input[type="file"] {
       width: 100%;
       padding: 0.4rem 0.5rem;
       border-radius: 0.4rem;
       border: 1px solid #4b5563;
       background: transparent;
       color: inherit;
+      font-size: 0.9rem;
     }
     textarea { resize: vertical; }
 
@@ -153,7 +158,7 @@
       cursor: pointer;
     }
     button[type="submit"] { background: var(--accent); color: #f9fafb; }
-    button[type="button"] { background: #4b5563; color: #f9fafb; margin-right: 0.5rem; }
+    button[type="button"] { background: #4b5563; color: #f9fafb; }
 
     .export-import {
       margin-top: 1.5rem;
@@ -161,7 +166,11 @@
       border-top: 1px solid var(--border);
     }
 
-    #export-data { margin-top: 0.5rem; min-height: 80px; }
+    .small {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
 
     .tag-filter-container { margin-bottom: 0.75rem; font-size: 0.85rem; }
     .tag-filter-list { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.25rem; }
@@ -175,6 +184,24 @@
       border: 1px solid transparent;
     }
     .tag-filter-pill.active { border-color: var(--accent); }
+
+    .export-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .export-left { flex: 1; }
+    .export-right { align-self: flex-end; }
+    @media (min-width: 600px) {
+      .export-layout {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .export-left { margin-right: 1rem; }
+      .export-right { text-align: right; }
+    }
+    #export-data { min-height: 80px; width: 100%; }
   </style>
 </head>
 
@@ -227,32 +254,50 @@
 
       <div class="form-row">
         <label>Tags (séparés par virgules)</label>
-        <input id="tags" type="text" placeholder="vintage, UPS, revision…">
+        <input id="tags" type="text" placeholder="vintage, UPS, révision…">
       </div>
 
       <div class="form-row">
-        <label>Image (URL optionnelle)</label>
-        <input id="imageUrl" type="url" placeholder="https://image.jpg">
+        <label>Image (URL ou depuis l'appareil)</label>
+        <input id="imageUrl" type="url" placeholder="https://image.jpg (optionnel)">
+        <input id="imageFile" type="file" accept="image/*">
+        <p class="small">
+          Tu peux soit coller une URL d'image, soit choisir une image locale (elle sera stockée dans l'app).
+        </p>
       </div>
 
       <div class="form-row">
         <button type="submit">Ajouter</button>
-        <button type="button" id="clear-storage">Reset local</button>
+        <p class="small">
+          Les données sont stockées localement dans ce navigateur. Utilise l'export JSON pour une sauvegarde ou pour transférer sur un autre appareil.
+        </p>
       </div>
     </form>
 
     <div class="export-import">
       <h2>Exporter / Importer</h2>
-      <div class="form-row">
-        <button type="button" id="export-btn">Exporter</button>
-        <button type="button" id="import-btn">Importer</button>
+      <div class="export-layout">
+        <div class="export-left">
+          <div class="form-row">
+            <button type="button" id="export-btn">Exporter</button>
+            <button type="button" id="import-btn">Importer</button>
+          </div>
+          <div class="form-row">
+            <label for="export-data">Données JSON</label>
+            <textarea id="export-data" placeholder="Exporter puis copier, ou coller ici pour importer."></textarea>
+          </div>
+        </div>
+        <div class="export-right">
+          <button type="button" id="clear-storage">Effacer toutes les données locales</button>
+          <p class="small">
+            Ce bouton supprime toutes les montres & colis stockés localement sur cet appareil.
+          </p>
+        </div>
       </div>
-      <textarea id="export-data"></textarea>
     </div>
   </div>
 
   <script>
-    // Aucune montre / aucun colis par défaut pour ton anonymat
     const defaultWatches = [];
     const defaultParcels = [];
 
@@ -264,7 +309,8 @@
       try {
         const raw = localStorage.getItem(key);
         if (!raw) return [];
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
       } catch {
         return [];
       }
@@ -345,7 +391,6 @@
       container.innerHTML = "";
 
       const items = [...defaults, ...stored];
-
       const filtered = activeTagFilter
         ? items.filter(i => normalizeTags(i.tags).includes(activeTagFilter))
         : items;
@@ -414,56 +459,86 @@
       renderAll();
 
       const form = document.getElementById("add-form");
+      const exportBtn = document.getElementById("export-btn");
+      const importBtn = document.getElementById("import-btn");
+      const exportArea = document.getElementById("export-data");
+      const clearBtn = document.getElementById("clear-storage");
+      const imageFileInput = document.getElementById("imageFile");
+      const imageUrlInput = document.getElementById("imageUrl");
 
-      form.addEventListener("submit", e => {
+      form.addEventListener("submit", (e) => {
         e.preventDefault();
+
         const type = document.getElementById("type").value;
         const label = document.getElementById("label").value.trim();
         let url = document.getElementById("url").value.trim();
         const tagsRaw = document.getElementById("tags").value.trim();
-        const imageUrl = document.getElementById("imageUrl").value.trim();
+        const imageUrlField = imageUrlInput.value.trim();
+        const file = imageFileInput.files[0];
 
-        if (!/^https?:\/\//.test(url)) url = "https://" + url;
-
-        const entry = {
-          label,
-          url,
-          tags: normalizeTags(tagsRaw),
-          imageUrl: imageUrl || ""
-        };
-
-        if (type === "watch") {
-          const stored = loadStored(WATCH_KEY);
-          stored.push(entry);
-          saveStored(WATCH_KEY, stored);
-        } else {
-          const stored = loadStored(PARCEL_KEY);
-          stored.push(entry);
-          saveStored(PARCEL_KEY, stored);
+        if (!label || !url) return;
+        if (!/^https?:\/\//i.test(url)) {
+          url = "https://" + url;
         }
 
-        form.reset();
-        renderAll();
+        const tags = normalizeTags(tagsRaw);
+
+        function saveEntry(finalImageUrl) {
+          const entry = {
+            label,
+            url,
+            tags,
+            imageUrl: finalImageUrl || imageUrlField || ""
+          };
+
+          if (type === "watch") {
+            const stored = loadStored(WATCH_KEY);
+            stored.push(entry);
+            saveStored(WATCH_KEY, stored);
+          } else {
+            const stored = loadStored(PARCEL_KEY);
+            stored.push(entry);
+            saveStored(PARCEL_KEY, stored);
+          }
+
+          form.reset();
+          activeTagFilter = null;
+          renderAll();
+        }
+
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            saveEntry(ev.target.result);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          saveEntry("");
+        }
       });
 
-      document.getElementById("clear-storage").onclick = () => {
-        if (confirm("Effacer toutes les données locales ?")) {
+      clearBtn.addEventListener("click", () => {
+        if (confirm("Effacer toutes les données locales (montres & colis) sur cet appareil ?")) {
           localStorage.removeItem(WATCH_KEY);
           localStorage.removeItem(PARCEL_KEY);
           activeTagFilter = null;
           renderAll();
         }
-      };
+      });
 
-      document.getElementById("export-btn").onclick = () => {
-        document.getElementById("export-data").value = JSON.stringify({
+      exportBtn.addEventListener("click", () => {
+        exportArea.value = JSON.stringify({
           watches: loadStored(WATCH_KEY),
           parcels: loadStored(PARCEL_KEY)
         }, null, 2);
-      };
+      });
 
-      document.getElementById("import-btn").onclick = () => {
-        const txt = document.getElementById("export-data").value.trim();
+      importBtn.addEventListener("click", () => {
+        const txt = exportArea.value.trim();
+        if (!txt) {
+          alert("Colle des données JSON avant d'importer.");
+          return;
+        }
         try {
           const data = JSON.parse(txt);
           saveStored(WATCH_KEY, Array.isArray(data.watches) ? data.watches : []);
@@ -474,10 +549,10 @@
         } catch {
           alert("JSON invalide.");
         }
-      };
+      });
 
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("sw.js");
+        navigator.serviceWorker.register("sw.js").catch(() => {});
       }
     });
   </script>
